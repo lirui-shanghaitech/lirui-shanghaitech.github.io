@@ -107,8 +107,8 @@ menu_settings:
 
 sidebar:
   # Sidebar Position.
-  position: left
-  #position: right
+  # position: left
+  position: right
 
   # Manual define the sidebar width. If commented, will be default for:
   # Muse | Mist: 320
@@ -124,9 +124,13 @@ sidebar:
   display: always
 
   # Sidebar padding in pixels.
-  padding: 18
+  # padding: 18
+  padding: 30
+
   # Sidebar offset from top menubar in pixels (only for Pisces | Gemini).
-  offset: 12
+  # offset: 12
+  offset: 20
+
 
 # Sidebar Avatar
 avatar:
@@ -346,6 +350,14 @@ calendar:
 # For more information: https://www.w3.org/TR/resource-hints/#preconnect
 preconnect: false
 
+# post_wordcount:
+#   item_text: true
+#   wordcount: true         # 单篇 字数统计
+#   min2read: true          # 单篇 阅读时长
+#   totalcount: false       # 网站 字数统计
+#   separated_meta: true
+
+
 # Set the text alignment in posts / pages.
 text_align:
   # Available values: start | end | left | right | center | justify | justify-all | match-parent
@@ -401,7 +413,7 @@ bookmark:
 
 # `Follow me on GitHub` banner in the top-right corner.
 github_banner:
-  enable: false
+  enable: true
   permalink: https://github.com/lirui-shanghaitech
   title: Follow me on GitHub
 
