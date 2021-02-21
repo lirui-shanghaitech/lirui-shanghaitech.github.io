@@ -22,6 +22,7 @@
     <title>Datapath synthesis in Verilog</title>
     <url>/2021/02/21/verilog-datapath-md/</url>
     <content><![CDATA[<h6 id="锁存器的综合："><a href="#锁存器的综合：" class="headerlink" title="锁存器的综合："></a>锁存器的综合：</h6><figure class="highlight verilog"><table><tr><td class="code"><pre><span class="line"><span class="keyword">module</span> latch (</span><br><span class="line">    <span class="keyword">output</span> q_out,</span><br><span class="line">    <span class="keyword">input</span> data_in, enable, rst_b</span><br><span class="line">);</span><br><span class="line">    <span class="keyword">assign</span> q_out = !(rst_b == <span class="number">1&#x27;b0</span>) ? <span class="number">0</span>:enable ? data_in:q_out;</span><br><span class="line"><span class="keyword">endmodule</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
 
 <ul>
 <li>当一条带条件操作符的连续赋值语句出现反馈时，综合工具将判断出它具有一个锁存器的功能，并给出它的硬件实现。</li>
