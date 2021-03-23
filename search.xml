@@ -238,4 +238,157 @@
         <tag>verilog</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Lpsolve tutorial (Linear Programming Solver)</title>
+    <url>/2021/03/23/lpsolve/</url>
+    <content><![CDATA[<h2 id="Lpsolve-tutorial"><a href="#Lpsolve-tutorial" class="headerlink" title="Lpsolve tutorial"></a>Lpsolve tutorial</h2><h3 id="Problem-formulation"><a href="#Problem-formulation" class="headerlink" title="Problem formulation"></a>Problem formulation</h3><blockquote>
+<p>Suppose a farmer has 75 acres on which to plant two crops: wheat and barley. To produce these crops, it costs the farmer (for seed, fertilizer, etc.) $120 per acre for the wheat and $210 per acre for the barley. The farmer has $15000 available for expenses. But after the harvest, the farmer must store the crops while awaiting favourable market conditions. The farmer has storage space for 4000 bushels. Each acre yields an average of 110 bushels of wheat or 30 bushels of barley. If the net profit per bushel of wheat (after all expenses have been subtracted) is $1.30 and for barley is $2.00, how should the farmer plant the 75 acres to maximize profit?</p>
+</blockquote>
+<p>Mathmatically, we can formulate this as :</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">Maximize P <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">110</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token number">1.30</span><span class="token punctuation">)</span>x <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token number">2.00</span><span class="token punctuation">)</span>y <span class="token operator">=</span> <span class="token number">143</span>x <span class="token operator">+</span> <span class="token number">60</span>y
+s<span class="token punctuation">.</span>t<span class="token punctuation">.</span>            
+				<span class="token number">120</span>x <span class="token operator">+</span> <span class="token number">210</span>y <span class="token operator">&lt;=</span> <span class="token number">15000</span>
+                <span class="token number">110</span>x <span class="token operator">+</span> <span class="token number">30</span>y <span class="token operator">&lt;=</span> <span class="token number">4000</span>
+                x <span class="token operator">+</span> y <span class="token operator">&lt;=</span> <span class="token number">75</span>
+                x <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">,</span> y <span class="token operator">>=</span> <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<span id="more"></span>
+
+<p>where  <code>x</code> denote the number of acres allotted to wheat and <code>y</code> the number of acres allotted to barley, the optimal solution of this problem is </p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">x <span class="token operator">=</span> <span class="token number">21.875</span>
+y <span class="token operator">=</span> <span class="token number">75</span> <span class="token operator">-</span> <span class="token number">21.875</span> <span class="token operator">=</span> <span class="token number">53.125</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>How to solve this in LPSOLVE ?</p>
+<h3 id="Construct-model-from-C-C"><a href="#Construct-model-from-C-C" class="headerlink" title="Construct model from C/C++"></a>Construct model from C/C++</h3><ol>
+<li><h4 id="Setup-the-problem"><a href="#Setup-the-problem" class="headerlink" title="Setup the problem"></a>Setup the problem</h4></li>
+</ol>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">lprec <span class="token operator">*</span>lp <span class="token operator">=</span>  <span class="token function">make_lp</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> Ncol<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// there are two variables in the model, Ncol = 2</span>
+<span class="token function">set_col_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"x"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>	   <span class="token comment">// name our variables. Not required, but can be useful </span>
+<span class="token function">set_col_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"y"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ol start="2">
+<li><h4 id="Add-constraints-examples"><a href="#Add-constraints-examples" class="headerlink" title="Add constraints (examples)"></a>Add constraints (examples)</h4></li>
+</ol>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">set_add_rowmode</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> TRUE<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// makes building the model faster if it is done rows by row</span>
+REAL row<span class="token punctuation">[</span><span class="token number">1</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>     <span class="token comment">/* must be 1 more than number of columns ! */</span>
+REAL sparserow<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">/* must be the number of non-zero values */</span>
+<span class="token keyword">int</span> colno<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+<span class="token comment">/* Create a new LP model */</span>
+row<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">120</span><span class="token punctuation">;</span>
+row<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">210</span><span class="token punctuation">;</span> <span class="token comment">/* also zero elements must be provided */</span>
+<span class="token function">add_constraint</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> row<span class="token punctuation">,</span> LE<span class="token punctuation">,</span> <span class="token number">15000</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">/* constructs the row: 120x + 210y &lt;= 15000 */</span>
+
+colno<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">110</span><span class="token punctuation">;</span> <span class="token comment">/* column 1 */</span>
+colno<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">30</span><span class="token punctuation">;</span> <span class="token comment">/* column 2 */</span>
+<span class="token function">add_constraintex</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> sparserow<span class="token punctuation">,</span> colno<span class="token punctuation">,</span> LE<span class="token punctuation">,</span> <span class="token number">4000</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">/* constructs the row: 110x + 30y &lt;= 4000 */</span>
+<span class="token function">set_add_rowmode</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> FALSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// You can also set the row name to name the constraints</span>
+<span class="token function">set_row_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"row1"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">set_row_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"row2"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li><p>Note that for <strong>add_constraint</strong> (and <strong>add_constraintex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …, that is why row[1+2] must have <code>three</code> elements</p>
+</li>
+<li><p>add_constraintex has the possibility to specify only the non-zero elements. In that case <em>colno</em> specifies the column numbers of the non-zero elements. Both <em>row</em> and <em>colno</em> are then zero-based arrays. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Note that <strong>add_constraintex</strong> behaves the same as <strong>add_constraint</strong> when <em>colno</em> is NULL.</p>
+</li>
+<li><p>LE:  Less than or equal (&lt;=), EQ:  Equal (=), GE:  Greater than or equal (&gt;=)</p>
+</li>
+<li><p>Note that: <strong>ROW0</strong> is the objective function, so when index the constraints start from 1, for instance <code> set_mat(lp, 1, 1, 3.14);</code> set the first constaints to be <code>3.14x+210y &lt;= 15000</code>, also when you iterate through variables you must start with 1 (strange it not start with zero)</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>COL0 (Unsed)</th>
+<th>COL1 (X)</th>
+<th>COL2 (Y)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ROW0 (Obj)</td>
+<td>X</td>
+<td>143</td>
+<td>60</td>
+</tr>
+<tr>
+<td>ROW1 (Cons1)</td>
+<td>X</td>
+<td>120</td>
+<td>210</td>
+</tr>
+<tr>
+<td>ROW2 (Cons2)</td>
+<td>X</td>
+<td>110</td>
+<td>30</td>
+</tr>
+</tbody></table>
+<ol start="3">
+<li><h4 id="Set-objective"><a href="#Set-objective" class="headerlink" title="Set objective"></a>Set objective</h4></li>
+</ol>
+<p>There are four functions to set your objective function</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">set_obj_fn</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> REAL <span class="token operator">*</span>row<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">set_obj_fnex</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> <span class="token keyword">int</span> count<span class="token punctuation">,</span> REAL <span class="token operator">*</span>row<span class="token punctuation">,</span> <span class="token keyword">int</span> <span class="token operator">*</span>colno<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">str_set_obj_fn</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> <span class="token keyword">char</span> <span class="token operator">*</span>row_string<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">set_obj</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> <span class="token keyword">int</span> column<span class="token punctuation">,</span> REAL value<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Note that it is advised to set the objective function before adding rows via <a href="http://lpsolve.sourceforge.net/5.5/add_constraint.htm">add_constraint, add_constraintex, str_add_constraint</a>. This especially for larger models. This will be much more performant than adding the objective function afterwards (Here, we did not use it in such way).</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">REAL row<span class="token punctuation">[</span><span class="token number">1</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">/* must be 1 more then number of columns ! */</span>
+<span class="token comment">/* Create a new LP model */</span>
+row<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">143</span><span class="token punctuation">;</span>
+row<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">60</span><span class="token punctuation">;</span>
+<span class="token function">set_obj_fn</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> row<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">/* constructs the obj: 143x + 60y */</span>
+
+<span class="token comment">/* Another way using set_obj_fnex */</span>
+REAL sparserow<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">/* must be the number of non-zero values */</span>
+<span class="token keyword">int</span> colno<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+colno<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">143</span><span class="token punctuation">;</span> <span class="token comment">/* column 1 */</span>
+colno<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">60</span><span class="token punctuation">;</span> <span class="token comment">/* column 2 */</span>
+<span class="token function">set_obj_fnex</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> sparserow<span class="token punctuation">,</span> colno<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li><p>Note that for <strong>set_obj_fn</strong> (and <strong>set_obj_fnex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …</p>
+</li>
+<li><p><strong>set_obj_fnex</strong> has the possibility to specify only the non-zero elements. In that case <em>colno</em> specifies the column numbers of the non-zero elements. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Thus it is almost always better to use <strong>set_obj_fnex</strong> instead of <strong>set_obj_fn</strong>. <strong>set_obj_fnex</strong> is always at least as performant as <strong>set_obj_fn</strong>. Note that unspecified values by <strong>set_obj_fnex</strong> are set to zero.</p>
+</li>
+<li><p>The <strong>set_obj</strong> function sets the objective value for the specified column. If multiple objective values must be set, it is more performant to use <strong>set_obj_fnex</strong>.</p>
+</li>
+</ul>
+<ol start="4">
+<li><h4 id="Solve-problem"><a href="#Solve-problem" class="headerlink" title="Solve problem"></a>Solve problem</h4></li>
+</ol>
+<p>First you need to tell lpsolve whether you want to maximize or minimize ojective function, the call <code>solve </code> function to solve it</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">set_maxim</span><span class="token punctuation">(</span>lp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">/* Just out of curioucity, now show the model in lp format on screen */</span>
+<span class="token function">write_LP</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token constant">stdout</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+<span class="token comment">/* I only want to see important messages on screen while solving */</span>
+<span class="token function">set_verbose</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> IMPORTANT<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+<span class="token comment">/* Now let lpsolve calculate a solution */</span>
+<span class="token keyword">int</span> ret <span class="token operator">=</span> <span class="token function">solve</span><span class="token punctuation">(</span>lp<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>The solve will return integer values to indicate the state of solving process <code>OPTIMAL </code>, <code>SUBOPTIMAL </code>, <code>INFEASIBLE </code> …, you can use these values to judge whether lpsolve successfully solve the problem.</p>
+<ol start="5">
+<li><h4 id="Get-the-result"><a href="#Get-the-result" class="headerlink" title="Get the result"></a>Get the result</h4></li>
+</ol>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">/* Returns the value of the objective function. */</span>
+REAL <span class="token function">get_objective</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Objective value: %f\n"</span><span class="token punctuation">,</span> <span class="token function">get_objective</span><span class="token punctuation">(</span>lp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">/* There are two ways to get final variable value */</span>
+REAL var<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">*</span>ptr_var<span class="token punctuation">;</span>
+<span class="token function">get_variables</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> var<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">get_ptr_variables</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token operator">&amp;</span>ptr_var<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>The <strong>get_variables</strong>, <strong>get_ptr_variables</strong> functions retrieve the values of the variables. These values are only valid after a successful <a href="http://lpsolve.sourceforge.net/5.5/solve.htm">solve</a> or <a href="http://lpsolve.sourceforge.net/5.5/lag_solve.htm">lag_solve</a>. Function <strong>get_variables</strong> needs an array that is already dimensioned with <a href="http://lpsolve.sourceforge.net/5.5/get_Ncolumns.htm">get_Ncolumns</a> elements. <strong>get_ptr_variables</strong> returns a pointer to an array already dimensioned by lp_solve. Element 0 will contain the value of the first variable, element 1 of the second variable, …</li>
+</ul>
+<h4 id="IMPORTANT"><a href="#IMPORTANT" class="headerlink" title="IMPORTANT"></a>IMPORTANT</h4><p><strong>!!! The offical <a href="http://lpsolve.sourceforge.net/5.5/">lp_solve_API_reference</a> has may examples, after this, you should look those examples to further familiar with lp_solve.</strong>  The code of this turtorial can be found <strong><a href="https://github.com/lirui-shanghaitech/llvm_notes/tree/main/TUR_APP/lpsolve_tur">here</a></strong>.</p>
+]]></content>
+      <tags>
+        <tag>lpsolve</tag>
+      </tags>
+  </entry>
 </search>

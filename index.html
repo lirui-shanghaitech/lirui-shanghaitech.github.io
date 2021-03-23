@@ -24,9 +24,9 @@
     var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
   </script>
 <meta property="og:type" content="website">
-<meta property="og:title" content="DuckDuckGo">
+<meta property="og:title" content="The Furious Two">
 <meta property="og:url" content="http://example.com/index.html">
-<meta property="og:site_name" content="DuckDuckGo">
+<meta property="og:site_name" content="The Furious Two">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="Rui Li">
 <meta name="twitter:card" content="summary">
@@ -44,7 +44,7 @@
     lang   : 'en'
   };
 </script>
-<title>DuckDuckGo</title>
+<title>The Furious Two</title>
   
 
 
@@ -105,7 +105,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">DuckDuckGo</h1>
+      <h1 class="site-title">The Furious Two</h1>
       <i class="logo-line"></i>
     </a>
   </div>
@@ -197,7 +197,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -210,7 +210,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -257,6 +257,87 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/23/lpsolve/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/IMG_20201214_235623.jpg">
+      <meta itemprop="name" content="Rui Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="The Furious Two">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/03/23/lpsolve/" class="post-title-link" itemprop="url">Lpsolve tutorial (Linear Programming Solver)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2021-03-23 20:06:11 / Modified: 20:34:07" itemprop="dateCreated datePublished" datetime="2021-03-23T20:06:11+08:00">2021-03-23</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Lpsolve-tutorial"><a href="#Lpsolve-tutorial" class="headerlink" title="Lpsolve tutorial"></a>Lpsolve tutorial</h2><h3 id="Problem-formulation"><a href="#Problem-formulation" class="headerlink" title="Problem formulation"></a>Problem formulation</h3><blockquote>
+<p>Suppose a farmer has 75 acres on which to plant two crops: wheat and barley. To produce these crops, it costs the farmer (for seed, fertilizer, etc.) $120 per acre for the wheat and $210 per acre for the barley. The farmer has $15000 available for expenses. But after the harvest, the farmer must store the crops while awaiting favourable market conditions. The farmer has storage space for 4000 bushels. Each acre yields an average of 110 bushels of wheat or 30 bushels of barley. If the net profit per bushel of wheat (after all expenses have been subtracted) is $1.30 and for barley is $2.00, how should the farmer plant the 75 acres to maximize profit?</p>
+</blockquote>
+<p>Mathmatically, we can formulate this as :</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">Maximize P <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">110</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token number">1.30</span><span class="token punctuation">)</span>x <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token number">2.00</span><span class="token punctuation">)</span>y <span class="token operator">=</span> <span class="token number">143</span>x <span class="token operator">+</span> <span class="token number">60</span>y
+s<span class="token punctuation">.</span>t<span class="token punctuation">.</span>            
+				<span class="token number">120</span>x <span class="token operator">+</span> <span class="token number">210</span>y <span class="token operator">&lt;=</span> <span class="token number">15000</span>
+                <span class="token number">110</span>x <span class="token operator">+</span> <span class="token number">30</span>y <span class="token operator">&lt;=</span> <span class="token number">4000</span>
+                x <span class="token operator">+</span> y <span class="token operator">&lt;=</span> <span class="token number">75</span>
+                x <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">,</span> y <span class="token operator">>=</span> <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/23/lpsolve/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/21/verilog-datapath-md/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -266,7 +347,7 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="DuckDuckGo">
+      <meta itemprop="name" content="The Furious Two">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -352,7 +433,7 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="DuckDuckGo">
+      <meta itemprop="name" content="The Furious Two">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
