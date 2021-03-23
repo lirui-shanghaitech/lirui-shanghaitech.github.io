@@ -66,13 +66,13 @@ set_row_name(lp, 1, "row1");
 set_row_name(lp, 1, "row2");
 ```
 
-- Note that for **add_constraint** (and **add_constraintex** when *colno* is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, ..., that is why row[1+2] must have `three` elements
+- [ ] Note that for **add_constraint** (and **add_constraintex** when *colno* is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, ..., that is why row[1+2] must have `three` elements
 
-- add_constraintex has the possibility to specify only the non-zero elements. In that case *colno* specifies the column numbers of the non-zero elements. Both *row* and *colno* are then zero-based arrays. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Note that **add_constraintex** behaves the same as **add_constraint** when *colno* is NULL.
+- [ ] add_constraintex has the possibility to specify only the non-zero elements. In that case *colno* specifies the column numbers of the non-zero elements. Both *row* and *colno* are then zero-based arrays. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Note that **add_constraintex** behaves the same as **add_constraint** when *colno* is NULL.
 
-- LE:  Less than or equal (<=), EQ:  Equal (=), GE:  Greater than or equal (>=)
+- [ ] LE:  Less than or equal (<=), EQ:  Equal (=), GE:  Greater than or equal (>=)
 
-- Note that: **ROW0** is the objective function, so when index the constraints start from 1, for instance ` set_mat(lp, 1, 1, 3.14);` set the first constaints to be `3.14x+210y <= 15000`, also when you iterate through variables you must start with 1 (strange it not start with zero)
+- [ ] Note that: **ROW0** is the objective function, so when index the constraints start from 1, for instance ` set_mat(lp, 1, 1, 3.14);` set the first constaints to be `3.14x+210y <= 15000`, also when you iterate through variables you must start with 1 (strange it not start with zero)
 
 |              | COL0 (Unsed) | COL1 (X) | COL2 (Y) |
 | ------------ | ------------ | -------- | -------- |
@@ -108,11 +108,11 @@ colno[1] = 2; sparserow[1] = 60; /* column 2 */
 set_obj_fnex(lp, 2, sparserow, colno);
 ```
 
-- Note that for **set_obj_fn** (and **set_obj_fnex** when *colno* is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, ...
+- [ ] Note that for **set_obj_fn** (and **set_obj_fnex** when *colno* is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, ...
 
-- **set_obj_fnex** has the possibility to specify only the non-zero elements. In that case *colno* specifies the column numbers of the non-zero elements. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Thus it is almost always better to use **set_obj_fnex** instead of **set_obj_fn**. **set_obj_fnex** is always at least as performant as **set_obj_fn**. Note that unspecified values by **set_obj_fnex** are set to zero.
+- [ ] **set_obj_fnex** has the possibility to specify only the non-zero elements. In that case *colno* specifies the column numbers of the non-zero elements. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Thus it is almost always better to use **set_obj_fnex** instead of **set_obj_fn**. **set_obj_fnex** is always at least as performant as **set_obj_fn**. Note that unspecified values by **set_obj_fnex** are set to zero.
 
-- The **set_obj** function sets the objective value for the specified column. If multiple objective values must be set, it is more performant to use **set_obj_fnex**.
+- [ ] The **set_obj** function sets the objective value for the specified column. If multiple objective values must be set, it is more performant to use **set_obj_fnex**.
 
 4. #### Solve problem
 
@@ -143,7 +143,7 @@ get_variables(lp, var);
 get_ptr_variables(lp, &ptr_var);
 ```
 
-- The **get_variables**, **get_ptr_variables** functions retrieve the values of the variables. These values are only valid after a successful [solve](http://lpsolve.sourceforge.net/5.5/solve.htm) or [lag_solve](http://lpsolve.sourceforge.net/5.5/lag_solve.htm). Function **get_variables** needs an array that is already dimensioned with [get_Ncolumns](http://lpsolve.sourceforge.net/5.5/get_Ncolumns.htm) elements. **get_ptr_variables** returns a pointer to an array already dimensioned by lp_solve. Element 0 will contain the value of the first variable, element 1 of the second variable, ...
+- [ ] The **get_variables**, **get_ptr_variables** functions retrieve the values of the variables. These values are only valid after a successful [solve](http://lpsolve.sourceforge.net/5.5/solve.htm) or [lag_solve](http://lpsolve.sourceforge.net/5.5/lag_solve.htm). Function **get_variables** needs an array that is already dimensioned with [get_Ncolumns](http://lpsolve.sourceforge.net/5.5/get_Ncolumns.htm) elements. **get_ptr_variables** returns a pointer to an array already dimensioned by lp_solve. Element 0 will contain the value of the first variable, element 1 of the second variable, ...
 
 
 
