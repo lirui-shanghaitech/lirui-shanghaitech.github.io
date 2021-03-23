@@ -31,7 +31,7 @@
 <meta property="og:description" content="Lpsolve tutorialProblem formulation Suppose a farmer has 75 acres on which to plant two crops: wheat and barley. To produce these crops, it costs the farmer (for seed, fertilizer, etc.) $120 per acre">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2021-03-23T12:06:11.000Z">
-<meta property="article:modified_time" content="2021-03-23T12:34:07.968Z">
+<meta property="article:modified_time" content="2021-03-23T12:58:47.747Z">
 <meta property="article:author" content="Rui Li">
 <meta property="article:tag" content="lpsolve">
 <meta name="twitter:card" content="summary">
@@ -289,7 +289,7 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2021-03-23 20:06:11 / Modified: 20:34:07" itemprop="dateCreated datePublished" datetime="2021-03-23T20:06:11+08:00">2021-03-23</time>
+      <time title="Created: 2021-03-23 20:06:11 / Modified: 20:58:47" itemprop="dateCreated datePublished" datetime="2021-03-23T20:06:11+08:00">2021-03-23</time>
     </span>
 
   
@@ -357,13 +357,13 @@ colno<span class="token punctuation">[</span><span class="token number">1</span>
 <span class="token function">set_row_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"row2"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <ul>
-<li><p>Note that for <strong>add_constraint</strong> (and <strong>add_constraintex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …, that is why row[1+2] must have <code>three</code> elements</p>
+<li><p><input disabled="" type="checkbox">  Note that for <strong>add_constraint</strong> (and <strong>add_constraintex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …, that is why row[1+2] must have <code>three</code> elements</p>
 </li>
-<li><p>add_constraintex has the possibility to specify only the non-zero elements. In that case <em>colno</em> specifies the column numbers of the non-zero elements. Both <em>row</em> and <em>colno</em> are then zero-based arrays. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Note that <strong>add_constraintex</strong> behaves the same as <strong>add_constraint</strong> when <em>colno</em> is NULL.</p>
+<li><p><input disabled="" type="checkbox">  add_constraintex has the possibility to specify only the non-zero elements. In that case <em>colno</em> specifies the column numbers of the non-zero elements. Both <em>row</em> and <em>colno</em> are then zero-based arrays. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Note that <strong>add_constraintex</strong> behaves the same as <strong>add_constraint</strong> when <em>colno</em> is NULL.</p>
 </li>
-<li><p>LE:  Less than or equal (&lt;=), EQ:  Equal (=), GE:  Greater than or equal (&gt;=)</p>
+<li><p><input disabled="" type="checkbox">  LE:  Less than or equal (&lt;=), EQ:  Equal (=), GE:  Greater than or equal (&gt;=)</p>
 </li>
-<li><p>Note that: <strong>ROW0</strong> is the objective function, so when index the constraints start from 1, for instance <code> set_mat(lp, 1, 1, 3.14);</code> set the first constaints to be <code>3.14x+210y &lt;= 15000</code>, also when you iterate through variables you must start with 1 (strange it not start with zero)</p>
+<li><p><input disabled="" type="checkbox">  Note that: <strong>ROW0</strong> is the objective function, so when index the constraints start from 1, for instance <code> set_mat(lp, 1, 1, 3.14);</code> set the first constaints to be <code>3.14x+210y &lt;= 15000</code>, also when you iterate through variables you must start with 1 (strange it not start with zero)</p>
 </li>
 </ul>
 <table>
@@ -418,11 +418,11 @@ colno<span class="token punctuation">[</span><span class="token number">1</span>
 <span class="token function">set_obj_fnex</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> sparserow<span class="token punctuation">,</span> colno<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <ul>
-<li><p>Note that for <strong>set_obj_fn</strong> (and <strong>set_obj_fnex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …</p>
+<li><p><input disabled="" type="checkbox">  Note that for <strong>set_obj_fn</strong> (and <strong>set_obj_fnex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …</p>
 </li>
 <li><p><strong>set_obj_fnex</strong> has the possibility to specify only the non-zero elements. In that case <em>colno</em> specifies the column numbers of the non-zero elements. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Thus it is almost always better to use <strong>set_obj_fnex</strong> instead of <strong>set_obj_fn</strong>. <strong>set_obj_fnex</strong> is always at least as performant as <strong>set_obj_fn</strong>. Note that unspecified values by <strong>set_obj_fnex</strong> are set to zero.</p>
 </li>
-<li><p>The <strong>set_obj</strong> function sets the objective value for the specified column. If multiple objective values must be set, it is more performant to use <strong>set_obj_fnex</strong>.</p>
+<li><p><input disabled="" type="checkbox">  The <strong>set_obj</strong> function sets the objective value for the specified column. If multiple objective values must be set, it is more performant to use <strong>set_obj_fnex</strong>.</p>
 </li>
 </ul>
 <ol start="4">
@@ -451,7 +451,7 @@ REAL var<span class="token punctuation">[</span><span class="token number">2</sp
 <span class="token function">get_ptr_variables</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token operator">&amp;</span>ptr_var<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <ul>
-<li>The <strong>get_variables</strong>, <strong>get_ptr_variables</strong> functions retrieve the values of the variables. These values are only valid after a successful <a target="_blank" rel="noopener" href="http://lpsolve.sourceforge.net/5.5/solve.htm">solve</a> or <a target="_blank" rel="noopener" href="http://lpsolve.sourceforge.net/5.5/lag_solve.htm">lag_solve</a>. Function <strong>get_variables</strong> needs an array that is already dimensioned with <a target="_blank" rel="noopener" href="http://lpsolve.sourceforge.net/5.5/get_Ncolumns.htm">get_Ncolumns</a> elements. <strong>get_ptr_variables</strong> returns a pointer to an array already dimensioned by lp_solve. Element 0 will contain the value of the first variable, element 1 of the second variable, …</li>
+<li><input disabled="" type="checkbox"> The <strong>get_variables</strong>, <strong>get_ptr_variables</strong> functions retrieve the values of the variables. These values are only valid after a successful <a target="_blank" rel="noopener" href="http://lpsolve.sourceforge.net/5.5/solve.htm">solve</a> or <a target="_blank" rel="noopener" href="http://lpsolve.sourceforge.net/5.5/lag_solve.htm">lag_solve</a>. Function <strong>get_variables</strong> needs an array that is already dimensioned with <a target="_blank" rel="noopener" href="http://lpsolve.sourceforge.net/5.5/get_Ncolumns.htm">get_Ncolumns</a> elements. <strong>get_ptr_variables</strong> returns a pointer to an array already dimensioned by lp_solve. Element 0 will contain the value of the first variable, element 1 of the second variable, …</li>
 </ul>
 <h4 id="IMPORTANT"><a href="#IMPORTANT" class="headerlink" title="IMPORTANT"></a>IMPORTANT</h4><p><strong>!!! The offical <a target="_blank" rel="noopener" href="http://lpsolve.sourceforge.net/5.5/">lp_solve_API_reference</a> has may examples, after this, you should look those examples to further familiar with lp_solve.</strong>  The code of this turtorial can be found <strong><a target="_blank" rel="noopener" href="https://github.com/lirui-shanghaitech/llvm_notes/tree/main/TUR_APP/lpsolve_tur">here</a></strong>.</p>
 
