@@ -398,6 +398,8 @@ REAL var<span class="token punctuation">[</span><span class="token number">2</sp
 @variable &#x3D; global i32 21<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>Globals are prefixed with the <code>@</code> character. You can see that also functions, such as <code>main</code>, are also global variables in LLVM. <strong>LLVM views global variables as pointers;</strong>  so you must explicitly dereference the global variable using the <code>load</code> instruction when accessing its value, likewise you must explicitly store the value of a global variable using the <code>store</code> instruction.</p>
+<span id="more"></span>
+
 <h5 id="Local-variables"><a href="#Local-variables" class="headerlink" title="Local variables"></a>Local variables</h5><ul>
 <li>Temporary variables/Registers: created by introducing a new symbol for the variable</li>
 <li>Stack-allocated local variables: created by allocating the variable on the stack</li>
