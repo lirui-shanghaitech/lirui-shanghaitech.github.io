@@ -1,7 +1,8 @@
 ---
 title: Lpsolve tutorial (Linear Programming Solver)
 date: 2021-03-23 20:06:11
-tags: lpsolve
+tags: ILP
+categories: HLS
 ---
 
 ## Lpsolve tutorial

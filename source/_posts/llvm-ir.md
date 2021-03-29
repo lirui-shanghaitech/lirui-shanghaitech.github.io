@@ -2,6 +2,7 @@
 title: LLVM IR Turtorial
 date: 2021-03-24 15:15:04
 tags: LLVM
+categories: HLS
 ---
 
 ### LLVM IR notes
@@ -16,6 +17,8 @@ int variable = 21;
 ```
 
 Globals are prefixed with the `@` character. You can see that also functions, such as `main`, are also global variables in LLVM. **LLVM views global variables as pointers;**  so you must explicitly dereference the global variable using the `load` instruction when accessing its value, likewise you must explicitly store the value of a global variable using the `store` instruction.
+
+<!--more-->
 
 ##### Local variables
 

@@ -1,7 +1,7 @@
 ---
 title: Datapath synthesis in Verilog
 date: 2021-02-21 20:30:17
-tags: verilog 
+tags: Verilog 
 categories: Verilog
 ---
 
