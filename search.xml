@@ -395,7 +395,7 @@ REAL var<span class="token punctuation">[</span><span class="token number">2</sp
 ]]></content>
   </entry>
   <entry>
-    <title>LLVM IR Turtorial</title>
+    <title>LLVM IR Tutorial</title>
     <url>/2021/03/24/llvm-ir/</url>
     <content><![CDATA[<h3 id="LLVM-IR-notes"><a href="#LLVM-IR-notes" class="headerlink" title="LLVM IR notes"></a>LLVM IR notes</h3><h4 id="Basic-constructs"><a href="#Basic-constructs" class="headerlink" title="Basic constructs"></a>Basic constructs</h4><h5 id="Global-variable"><a href="#Global-variable" class="headerlink" title="Global variable"></a>Global variable</h5><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int variable &#x3D; 21;
 @variable &#x3D; global i32 21<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
