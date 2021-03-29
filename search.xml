@@ -216,7 +216,7 @@
         <category>Verilog</category>
       </categories>
       <tags>
-        <tag>verilog</tag>
+        <tag>Verilog</tag>
       </tags>
   </entry>
   <entry>
@@ -368,8 +368,11 @@ REAL var<span class="token punctuation">[</span><span class="token number">2</sp
 </ul>
 <h4 id="IMPORTANT"><a href="#IMPORTANT" class="headerlink" title="IMPORTANT"></a>IMPORTANT</h4><p><strong>!!! The offical <a href="http://lpsolve.sourceforge.net/5.5/">lp_solve_API_reference</a> has may examples, after this, you should look those examples to further familiar with lp_solve.</strong>  The code of this turtorial can be found <strong><a href="https://github.com/lirui-shanghaitech/llvm_notes/tree/main/TUR_APP/lpsolve_tur">here</a></strong>.</p>
 ]]></content>
+      <categories>
+        <category>HLS</category>
+      </categories>
       <tags>
-        <tag>lpsolve</tag>
+        <tag>ILP</tag>
       </tags>
   </entry>
   <entry>
@@ -643,8 +646,64 @@ define void @Foo_SetLength(%Foo* %this, i32 %value) nounwind &#123;
 &lt;result&gt; &#x3D; getelementptr &lt;ty&gt;, &lt;ptr vector&gt; &lt;ptrval&gt;, [inrange] &lt;vector index type&gt; &lt;idx&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 
 ]]></content>
+      <categories>
+        <category>HLS</category>
+      </categories>
       <tags>
         <tag>LLVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Modulo Scheduling In HLS (Loop Pipeline Synthesis)</title>
+    <url>/2021/03/28/modulo-scheduling/</url>
+    <content><![CDATA[<h2 id="Modulo-Scheduling-In-HLS-Loop-Pipeline-synthesis"><a href="#Modulo-Scheduling-In-HLS-Loop-Pipeline-synthesis" class="headerlink" title="Modulo Scheduling In HLS (Loop Pipeline synthesis)"></a>Modulo Scheduling In HLS (Loop Pipeline synthesis)</h2><h3 id="Instruction-Scheduling-Introduction"><a href="#Instruction-Scheduling-Introduction" class="headerlink" title="Instruction Scheduling Introduction"></a>Instruction Scheduling Introduction</h3><p>Instruction Scheduling can be broken into three categories: <em>Local Scheduling, Global Scheduling, and Cyclic Scheduling</em>:</p>
+<ul>
+<li><strong>Local Scheduling</strong> handles single basic blocks which are regions of straight line code that have a single entry and exit (List scheduling).</li>
+<li><strong>Global Scheduling</strong> can handle multiple basic blocks with acyclic control flow (Trace Scheduling, Superblock Scheduling, Hyperblock Scheduling).</li>
+<li><strong>Cyclic Scheduling</strong> handles single or multiple basic blocks with cyclic control flow. (Modulo Scheduling)</li>
+</ul>
+<p>There exist many Global Scheduling algorithms that can also be used in cyclic scheduling</p>
+<ul>
+<li><strong>Trace Scheduling</strong> It identifies frequently executed traces in the program and treats the path as an extended basic block which is scheduled using a list scheduling approach.</li>
+<li><strong>Superblock Scheduling</strong> Superblocks are a subset of traces which have a single entry and multiple exit attributes (therefore they are traces without side exits). List scheduling is typically used to schedule the superblock.</li>
+<li><strong>Hyperblock Scheduling</strong> Excessive control flow can complicate scheduling, so this approach uses a technique called If-Conversion to remove conditional branches.</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="General-Steps-Of-Modulo-Scheduling"><a href="#General-Steps-Of-Modulo-Scheduling" class="headerlink" title="General Steps Of Modulo Scheduling"></a>General Steps Of Modulo Scheduling</h3><p>Modulo Scheduling is <em>traditionally restricted to single basic block loops without control flow</em>, which can limit the number of candidate loops. Global Software Pipelining techniques have emerged to exploit some of the opportunities for ILP in multiple basic block loops that frequently occur in computation intensive applications.</p>
+<p><img src="/images/image-20210328124007797.png" alt="image-20210328124007797"></p>
+<p>Using the DDG, the Minimum Initiation Interval (MII), which is the minimum amount of time between the start of successive iterations of a loop, is computed. Modulo Scheduling algorithms aim to create a schedule with an Initiation Interval (II) equal to MII, which is the smallest II possible and results in the most optimal schedule. The lower the II, the greater the parallelism.</p>
+<img src="/images/image-20210328171553786.png" alt="image-20210328171553786" style="zoom:50%;" />
+
+
+<p>Using the MII value as their initial II value, the algorithms attempt to schedule each instruction in the loop using some set of heuristics. If an optimal schedule can not be obtained, II is increased, and the algorithm attempts to compute the schedule again. This process is repeated until a schedule is obtained or the algorithm gives up. From this schedule, the loop is then reconstructed into a prologue, a kernel, and an epilogue. The prologue begins the first n iterations. After <strong>n ∗ II</strong> cycles, a steady state is achieved and a new iteration is initiated every II cycles. The epilogue finishes the last n iterations. Loops with long execution times will spend the majority of their time in the kernel.</p>
+<h3 id="Main-Steps"><a href="#Main-Steps" class="headerlink" title="Main Steps"></a>Main Steps</h3><h4 id="Data-Dependency-Graph-construction"><a href="#Data-Dependency-Graph-construction" class="headerlink" title="Data Dependency Graph construction"></a>Data Dependency Graph construction</h4><p>There are three types of dependencies in the DDG:</p>
+<ul>
+<li><strong>True Dependence</strong>: If the first instruction writes to a value, and a second instruction reads the same value, there is a true dependence from the first instruction to the second.</li>
+<li><strong>Anti Dependence</strong>: If the first instruction reads a value, and a second instruction writes a value, then there is an anti dependence from the first instruction to the second.</li>
+<li><strong>Output Dependence</strong>: If two instructions both write to the same value, then there is an output dependence between them.</li>
+</ul>
+<p>Each dependence has a distance associated with it, called the iteration difference. If the distance is zero, this means the dependence is a loop-independent dependence, in other words a dependence within one iteration. If the distance is greater than zero, there is a dependence across iterations, a loop-carried dependence. <strong>The value of the distance for loop-carried dependences is one</strong> (a conservative guess), unless further analysis can prove the actual number of iterations between the instructions. The distance can also be calculated using SCEV and AA analysis, for details info, please refer to Chapter4.2 of this <a href="https://llvm.org/pubs/2005-06-17-LattnerMSThesis.pdf">artical</a></p>
+<h4 id="Calculating-the-Minimum-Initiation-Interval"><a href="#Calculating-the-Minimum-Initiation-Interval" class="headerlink" title="Calculating the Minimum Initiation Interval"></a>Calculating the Minimum Initiation Interval</h4><h5 id="Resource-II-Heuritic-exact-method-is-NP-hard"><a href="#Resource-II-Heuritic-exact-method-is-NP-hard" class="headerlink" title="Resource II (Heuritic, exact method is NP-hard)"></a>Resource II (Heuritic, exact method is NP-hard)</h5><img src="/images/image-20210328144653002.png" alt="image-20210328144653002" style="zoom:50%;" />
+
+<h5 id="Recurrence-II"><a href="#Recurrence-II" class="headerlink" title="Recurrence II"></a>Recurrence II</h5><p>Recurrences may be found in the the DDG if instructions have dependences across iterations of the loop. Memory operations (load/store) are most likely the cause of a recurrence in the DDG. Recurrences are also known as circuits or cycles.</p>
+<img src="/images/image-20210328145300523.png" alt="image-20210328145300523" style="zoom:50%;" />
+
+<p>In order to compute the Recurrence Minimum Initiation Interval (RecMII), all recurrences in the DDG must be found. the algorithm proposed by <a href="https://www.cs.tufts.edu/comp/150GA/homeworks/hw1/Johnson%2075.PDF">Donald Johnson</a> is used to find all elementary circuits in the DDG. If no vertex except the first and last appear twice, then a circuit is termed elementary (I found an excellent video about implementation and explanation of this <a href="https://www.youtube.com/watch?v=johyrWospv0">algorithm</a>).</p>
+<h4 id="SDC-based-Scheduling"><a href="#SDC-based-Scheduling" class="headerlink" title="SDC-based Scheduling"></a>SDC-based Scheduling</h4><h5 id="Modeling-Loop-Carried-Dependence-with-SDC"><a href="#Modeling-Loop-Carried-Dependence-with-SDC" class="headerlink" title="Modeling Loop-Carried Dependence with SDC"></a>Modeling Loop-Carried Dependence with SDC</h5><img src="/images/image-20210328193951067.png" alt="image-20210328193951067" style="zoom:50%;" />
+
+<p>This was just <code>end(u) - start(v) &lt;= II * dis(u,v)</code> where <code>end(u)</code> is the cycle time when the output of operation <code>u</code> is available, and <code>start(v)</code> is the starting cycle of operation <code>v</code>,  for the above example, <code>u</code> is <code>v5</code> and <code>v</code> is <code>v1</code> . Note that <code>Lat(u)</code> is counted by cycles not the real latency, for instance, if the add takes <code>2ns</code> to finish and the cycle time is <code>5ns</code> then, the <code>Lat(add) = 0</code>, where, if the add takes <code>6ns</code>,  the <code>Lat(add) = 1</code>.</p>
+<h5 id="Inter-Iteration-Cycle-Time-Constraint-with-SDC"><a href="#Inter-Iteration-Cycle-Time-Constraint-with-SDC" class="headerlink" title="Inter-Iteration Cycle Time Constraint with SDC"></a>Inter-Iteration Cycle Time Constraint with SDC</h5><p>Loop pipelining exposes possibili- ties of chaining operations across iterations; namely, the result produced by an operation can be directly consumed in the same clock cycle by another operation that belongs to a later iteration. If such a path exists and involves one or mul- tiple inter-iteration dependences (i.e., back edges), we need to construct the following constraint to ensure that a register is inserted on this path to prevent the unfavorable cross- iteration chaining from causing a frequency violation.</p>
+<img src="/images/image-20210328195012817.png" alt="image-20210328195012817" style="zoom:50%;" />
+
+<p>The above constraint can also be rewrote to <code>s(v) + II*Dis(u,v) &gt; s(u) + Lat(u)</code>, note that, here we use <code>&gt;</code> instead of <code>&gt;=</code> since the <code>-1</code> is dropped.</p>
+<h5 id="Resource-Constraint-with-Modulo-Reservation-Table-MRT"><a href="#Resource-Constraint-with-Modulo-Reservation-Table-MRT" class="headerlink" title="Resource Constraint with Modulo Reservation Table (MRT)"></a>Resource Constraint with Modulo Reservation Table (MRT)</h5><p>Given resource constraints, we keep track of available resources using a table, where each row tracks a resource and each column is an available time slot. When we schedule an operation at time t, we reserve a single time slot in column t mod II of the table and in the appropriate resource row. Consequently the table is called the modulo reservation table (MRT) and has II time slot columns.</p>
+]]></content>
+      <categories>
+        <category>HLS</category>
+      </categories>
+      <tags>
+        <tag>Modulo Scheduling</tag>
       </tags>
   </entry>
 </search>

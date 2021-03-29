@@ -197,20 +197,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-count">5</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -257,6 +257,104 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/28/modulo-scheduling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/IMG_20201214_235623.jpg">
+      <meta itemprop="name" content="Rui Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="The Furious Two">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/03/28/modulo-scheduling/" class="post-title-link" itemprop="url">Modulo Scheduling In HLS (Loop Pipeline Synthesis)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-03-28 22:25:35" itemprop="dateCreated datePublished" datetime="2021-03-28T22:25:35+08:00">2021-03-28</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-29 10:09:24" itemprop="dateModified" datetime="2021-03-29T10:09:24+08:00">2021-03-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/HLS/" itemprop="url" rel="index"><span itemprop="name">HLS</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Modulo-Scheduling-In-HLS-Loop-Pipeline-synthesis"><a href="#Modulo-Scheduling-In-HLS-Loop-Pipeline-synthesis" class="headerlink" title="Modulo Scheduling In HLS (Loop Pipeline synthesis)"></a>Modulo Scheduling In HLS (Loop Pipeline synthesis)</h2><h3 id="Instruction-Scheduling-Introduction"><a href="#Instruction-Scheduling-Introduction" class="headerlink" title="Instruction Scheduling Introduction"></a>Instruction Scheduling Introduction</h3><p>Instruction Scheduling can be broken into three categories: <em>Local Scheduling, Global Scheduling, and Cyclic Scheduling</em>:</p>
+<ul>
+<li><strong>Local Scheduling</strong> handles single basic blocks which are regions of straight line code that have a single entry and exit (List scheduling).</li>
+<li><strong>Global Scheduling</strong> can handle multiple basic blocks with acyclic control flow (Trace Scheduling, Superblock Scheduling, Hyperblock Scheduling).</li>
+<li><strong>Cyclic Scheduling</strong> handles single or multiple basic blocks with cyclic control flow. (Modulo Scheduling)</li>
+</ul>
+<p>There exist many Global Scheduling algorithms that can also be used in cyclic scheduling</p>
+<ul>
+<li><strong>Trace Scheduling</strong> It identifies frequently executed traces in the program and treats the path as an extended basic block which is scheduled using a list scheduling approach.</li>
+<li><strong>Superblock Scheduling</strong> Superblocks are a subset of traces which have a single entry and multiple exit attributes (therefore they are traces without side exits). List scheduling is typically used to schedule the superblock.</li>
+<li><strong>Hyperblock Scheduling</strong> Excessive control flow can complicate scheduling, so this approach uses a technique called If-Conversion to remove conditional branches.</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/28/modulo-scheduling/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/24/llvm-ir/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -280,9 +378,24 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2021-03-24 15:15:04 / Modified: 15:19:44" itemprop="dateCreated datePublished" datetime="2021-03-24T15:15:04+08:00">2021-03-24</time>
+      <time title="Created: 2021-03-24 15:15:04" itemprop="dateCreated datePublished" datetime="2021-03-24T15:15:04+08:00">2021-03-24</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-29 10:04:20" itemprop="dateModified" datetime="2021-03-29T10:04:20+08:00">2021-03-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/HLS/" itemprop="url" rel="index"><span itemprop="name">HLS</span></a>
+        </span>
     </span>
 
   
@@ -355,9 +468,24 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2021-03-23 20:06:11 / Modified: 20:58:47" itemprop="dateCreated datePublished" datetime="2021-03-23T20:06:11+08:00">2021-03-23</time>
+      <time title="Created: 2021-03-23 20:06:11" itemprop="dateCreated datePublished" datetime="2021-03-23T20:06:11+08:00">2021-03-23</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-29 10:02:25" itemprop="dateModified" datetime="2021-03-29T10:02:25+08:00">2021-03-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/HLS/" itemprop="url" rel="index"><span itemprop="name">HLS</span></a>
+        </span>
     </span>
 
   
@@ -436,10 +564,16 @@ s<span class="token punctuation">.</span>t<span class="token punctuation">.</spa
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2021-02-21 20:30:17 / Modified: 20:43:56" itemprop="dateCreated datePublished" datetime="2021-02-21T20:30:17+08:00">2021-02-21</time>
+      <time title="Created: 2021-02-21 20:30:17" itemprop="dateCreated datePublished" datetime="2021-02-21T20:30:17+08:00">2021-02-21</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-29 10:05:01" itemprop="dateModified" datetime="2021-03-29T10:05:01+08:00">2021-03-29</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
