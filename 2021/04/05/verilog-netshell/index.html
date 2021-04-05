@@ -1,715 +1,341 @@
-<?xml version="1.0" encoding="utf-8"?>
-<search>
-  <entry>
-    <title>Hello World</title>
-    <url>/2021/02/21/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<span id="more"></span>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Modulo Scheduling In HLS (Loop Pipeline Synthesize)</title>
-    <url>/2021/03/28/modulo-scheduling/</url>
-    <content><![CDATA[<h2 id="Modulo-Scheduling-In-HLS-Loop-Pipeline-synthesis"><a href="#Modulo-Scheduling-In-HLS-Loop-Pipeline-synthesis" class="headerlink" title="Modulo Scheduling In HLS (Loop Pipeline synthesis)"></a>Modulo Scheduling In HLS (Loop Pipeline synthesis)</h2><h3 id="Instruction-Scheduling-Introduction"><a href="#Instruction-Scheduling-Introduction" class="headerlink" title="Instruction Scheduling Introduction"></a>Instruction Scheduling Introduction</h3><p>Instruction Scheduling can be broken into three categories: <em>Local Scheduling, Global Scheduling, and Cyclic Scheduling</em>:</p>
-<ul>
-<li><strong>Local Scheduling</strong> handles single basic blocks which are regions of straight line code that have a single entry and exit (List scheduling).</li>
-<li><strong>Global Scheduling</strong> can handle multiple basic blocks with acyclic control flow (Trace Scheduling, Superblock Scheduling, Hyperblock Scheduling).</li>
-<li><strong>Cyclic Scheduling</strong> handles single or multiple basic blocks with cyclic control flow. (Modulo Scheduling)</li>
-</ul>
-<p>There exist many Global Scheduling algorithms that can also be used in cyclic scheduling</p>
-<ul>
-<li><strong>Trace Scheduling</strong> It identifies frequently executed traces in the program and treats the path as an extended basic block which is scheduled using a list scheduling approach.</li>
-<li><strong>Superblock Scheduling</strong> Superblocks are a subset of traces which have a single entry and multiple exit attributes (therefore they are traces without side exits). List scheduling is typically used to schedule the superblock.</li>
-<li><strong>Hyperblock Scheduling</strong> Excessive control flow can complicate scheduling, so this approach uses a technique called If-Conversion to remove conditional branches.</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="General-Steps-Of-Modulo-Scheduling"><a href="#General-Steps-Of-Modulo-Scheduling" class="headerlink" title="General Steps Of Modulo Scheduling"></a>General Steps Of Modulo Scheduling</h3><p>Modulo Scheduling is <em>traditionally restricted to single basic block loops without control flow</em>, which can limit the number of candidate loops. Global Software Pipelining techniques have emerged to exploit some of the opportunities for ILP in multiple basic block loops that frequently occur in computation intensive applications.</p>
-<p><img src="/images/image-20210328124007797.png" alt="image-20210328124007797"></p>
-<p>Using the DDG, the Minimum Initiation Interval (MII), which is the minimum amount of time between the start of successive iterations of a loop, is computed. Modulo Scheduling algorithms aim to create a schedule with an Initiation Interval (II) equal to MII, which is the smallest II possible and results in the most optimal schedule. The lower the II, the greater the parallelism.</p>
-<img src="/images/image-20210328171553786.png" alt="image-20210328171553786" style="zoom:50%;" />
-
-
-<p>Using the MII value as their initial II value, the algorithms attempt to schedule each instruction in the loop using some set of heuristics. If an optimal schedule can not be obtained, II is increased, and the algorithm attempts to compute the schedule again. This process is repeated until a schedule is obtained or the algorithm gives up. From this schedule, the loop is then reconstructed into a prologue, a kernel, and an epilogue. The prologue begins the first n iterations. After <strong>n ∗ II</strong> cycles, a steady state is achieved and a new iteration is initiated every II cycles. The epilogue finishes the last n iterations. Loops with long execution times will spend the majority of their time in the kernel.</p>
-<h3 id="Main-Steps"><a href="#Main-Steps" class="headerlink" title="Main Steps"></a>Main Steps</h3><h4 id="Data-Dependency-Graph-construction"><a href="#Data-Dependency-Graph-construction" class="headerlink" title="Data Dependency Graph construction"></a>Data Dependency Graph construction</h4><p>There are three types of dependencies in the DDG:</p>
-<ul>
-<li><strong>True Dependence</strong>: If the first instruction writes to a value, and a second instruction reads the same value, there is a true dependence from the first instruction to the second.</li>
-<li><strong>Anti Dependence</strong>: If the first instruction reads a value, and a second instruction writes a value, then there is an anti dependence from the first instruction to the second.</li>
-<li><strong>Output Dependence</strong>: If two instructions both write to the same value, then there is an output dependence between them.</li>
-</ul>
-<p>Each dependence has a distance associated with it, called the iteration difference. If the distance is zero, this means the dependence is a loop-independent dependence, in other words a dependence within one iteration. If the distance is greater than zero, there is a dependence across iterations, a loop-carried dependence. <strong>The value of the distance for loop-carried dependences is one</strong> (a conservative guess), unless further analysis can prove the actual number of iterations between the instructions. The distance can also be calculated using SCEV and AA analysis, for details info, please refer to Chapter4.2 of this <a href="https://llvm.org/pubs/2005-06-17-LattnerMSThesis.pdf">artical</a></p>
-<h4 id="Calculating-the-Minimum-Initiation-Interval"><a href="#Calculating-the-Minimum-Initiation-Interval" class="headerlink" title="Calculating the Minimum Initiation Interval"></a>Calculating the Minimum Initiation Interval</h4><h5 id="Resource-II-Heuritic-exact-method-is-NP-hard"><a href="#Resource-II-Heuritic-exact-method-is-NP-hard" class="headerlink" title="Resource II (Heuritic, exact method is NP-hard)"></a>Resource II (Heuritic, exact method is NP-hard)</h5><img src="/images/image-20210328144653002.png" alt="image-20210328144653002" style="zoom:50%;" />
-
-<h5 id="Recurrence-II"><a href="#Recurrence-II" class="headerlink" title="Recurrence II"></a>Recurrence II</h5><p>Recurrences may be found in the the DDG if instructions have dependences across iterations of the loop. Memory operations (load/store) are most likely the cause of a recurrence in the DDG. Recurrences are also known as circuits or cycles.</p>
-<img src="/images/image-20210328145300523.png" alt="image-20210328145300523" style="zoom:50%;" />
-
-<p>In order to compute the Recurrence Minimum Initiation Interval (RecMII), all recurrences in the DDG must be found. the algorithm proposed by <a href="https://www.cs.tufts.edu/comp/150GA/homeworks/hw1/Johnson%2075.PDF">Donald Johnson</a> is used to find all elementary circuits in the DDG. If no vertex except the first and last appear twice, then a circuit is termed elementary (I found an excellent video about implementation and explanation of this <a href="https://www.youtube.com/watch?v=johyrWospv0">algorithm</a>).</p>
-<h4 id="SDC-based-Scheduling"><a href="#SDC-based-Scheduling" class="headerlink" title="SDC-based Scheduling"></a>SDC-based Scheduling</h4><h5 id="Modeling-Loop-Carried-Dependence-with-SDC"><a href="#Modeling-Loop-Carried-Dependence-with-SDC" class="headerlink" title="Modeling Loop-Carried Dependence with SDC"></a>Modeling Loop-Carried Dependence with SDC</h5><img src="/images/image-20210328193951067.png" alt="image-20210328193951067" style="zoom:50%;" />
-
-<p>This was just <code>end(u) - start(v) &lt;= II * dis(u,v)</code> where <code>end(u)</code> is the cycle time when the output of operation <code>u</code> is available, and <code>start(v)</code> is the starting cycle of operation <code>v</code>,  for the above example, <code>u</code> is <code>v5</code> and <code>v</code> is <code>v1</code> . Note that <code>Lat(u)</code> is counted by cycles not the real latency, for instance, if the add takes <code>2ns</code> to finish and the cycle time is <code>5ns</code> then, the <code>Lat(add) = 0</code>, where, if the add takes <code>6ns</code>,  the <code>Lat(add) = 1</code>.</p>
-<h5 id="Inter-Iteration-Cycle-Time-Constraint-with-SDC"><a href="#Inter-Iteration-Cycle-Time-Constraint-with-SDC" class="headerlink" title="Inter-Iteration Cycle Time Constraint with SDC"></a>Inter-Iteration Cycle Time Constraint with SDC</h5><p>Loop pipelining exposes possibili- ties of chaining operations across iterations; namely, the result produced by an operation can be directly consumed in the same clock cycle by another operation that belongs to a later iteration. If such a path exists and involves one or mul- tiple inter-iteration dependences (i.e., back edges), we need to construct the following constraint to ensure that a register is inserted on this path to prevent the unfavorable cross- iteration chaining from causing a frequency violation.</p>
-<img src="/images/image-20210328195012817.png" alt="image-20210328195012817" style="zoom:50%;" />
-
-<p>The above constraint can also be rewrote to <code>s(v) + II*Dis(u,v) &gt; s(u) + Lat(u)</code>, note that, here we use <code>&gt;</code> instead of <code>&gt;=</code> since the <code>-1</code> is dropped.</p>
-<h5 id="Resource-Constraint-with-Modulo-Reservation-Table-MRT"><a href="#Resource-Constraint-with-Modulo-Reservation-Table-MRT" class="headerlink" title="Resource Constraint with Modulo Reservation Table (MRT)"></a>Resource Constraint with Modulo Reservation Table (MRT)</h5><p>Given resource constraints, we keep track of available resources using a table, where each row tracks a resource and each column is an available time slot. When we schedule an operation at time t, we reserve a single time slot in column t mod II of the table and in the appropriate resource row. Consequently the table is called the modulo reservation table (MRT) and has II time slot columns.</p>
-]]></content>
-      <categories>
-        <category>HLS</category>
-      </categories>
-      <tags>
-        <tag>Modulo Scheduling</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Lpsolve tutorial (Linear Programming Solver)</title>
-    <url>/2021/03/23/lpsolve/</url>
-    <content><![CDATA[<h2 id="Lpsolve-tutorial"><a href="#Lpsolve-tutorial" class="headerlink" title="Lpsolve tutorial"></a>Lpsolve tutorial</h2><h3 id="Problem-formulation"><a href="#Problem-formulation" class="headerlink" title="Problem formulation"></a>Problem formulation</h3><blockquote>
-<p>Suppose a farmer has 75 acres on which to plant two crops: wheat and barley. To produce these crops, it costs the farmer (for seed, fertilizer, etc.) $120 per acre for the wheat and $210 per acre for the barley. The farmer has $15000 available for expenses. But after the harvest, the farmer must store the crops while awaiting favourable market conditions. The farmer has storage space for 4000 bushels. Each acre yields an average of 110 bushels of wheat or 30 bushels of barley. If the net profit per bushel of wheat (after all expenses have been subtracted) is $1.30 and for barley is $2.00, how should the farmer plant the 75 acres to maximize profit?</p>
-</blockquote>
-<p>Mathmatically, we can formulate this as :</p>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c">Maximize P <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">110</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token number">1.30</span><span class="token punctuation">)</span>x <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token number">2.00</span><span class="token punctuation">)</span>y <span class="token operator">=</span> <span class="token number">143</span>x <span class="token operator">+</span> <span class="token number">60</span>y
-s<span class="token punctuation">.</span>t<span class="token punctuation">.</span>            
-				<span class="token number">120</span>x <span class="token operator">+</span> <span class="token number">210</span>y <span class="token operator">&lt;=</span> <span class="token number">15000</span>
-                <span class="token number">110</span>x <span class="token operator">+</span> <span class="token number">30</span>y <span class="token operator">&lt;=</span> <span class="token number">4000</span>
-                x <span class="token operator">+</span> y <span class="token operator">&lt;=</span> <span class="token number">75</span>
-                x <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">,</span> y <span class="token operator">>=</span> <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<span id="more"></span>
-
-<p>where  <code>x</code> denote the number of acres allotted to wheat and <code>y</code> the number of acres allotted to barley, the optimal solution of this problem is </p>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c">x <span class="token operator">=</span> <span class="token number">21.875</span>
-y <span class="token operator">=</span> <span class="token number">75</span> <span class="token operator">-</span> <span class="token number">21.875</span> <span class="token operator">=</span> <span class="token number">53.125</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<p>How to solve this in LPSOLVE ?</p>
-<h3 id="Construct-model-from-C-C"><a href="#Construct-model-from-C-C" class="headerlink" title="Construct model from C/C++"></a>Construct model from C/C++</h3><ol>
-<li><h4 id="Setup-the-problem"><a href="#Setup-the-problem" class="headerlink" title="Setup the problem"></a>Setup the problem</h4></li>
-</ol>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c">lprec <span class="token operator">*</span>lp <span class="token operator">=</span>  <span class="token function">make_lp</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> Ncol<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// there are two variables in the model, Ncol = 2</span>
-<span class="token function">set_col_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"x"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>	   <span class="token comment">// name our variables. Not required, but can be useful </span>
-<span class="token function">set_col_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"y"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<ol start="2">
-<li><h4 id="Add-constraints-examples"><a href="#Add-constraints-examples" class="headerlink" title="Add constraints (examples)"></a>Add constraints (examples)</h4></li>
-</ol>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">set_add_rowmode</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> TRUE<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// makes building the model faster if it is done rows by row</span>
-REAL row<span class="token punctuation">[</span><span class="token number">1</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>     <span class="token comment">/* must be 1 more than number of columns ! */</span>
-REAL sparserow<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">/* must be the number of non-zero values */</span>
-<span class="token keyword">int</span> colno<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-
-<span class="token comment">/* Create a new LP model */</span>
-row<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">120</span><span class="token punctuation">;</span>
-row<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">210</span><span class="token punctuation">;</span> <span class="token comment">/* also zero elements must be provided */</span>
-<span class="token function">add_constraint</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> row<span class="token punctuation">,</span> LE<span class="token punctuation">,</span> <span class="token number">15000</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">/* constructs the row: 120x + 210y &lt;= 15000 */</span>
-
-colno<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">110</span><span class="token punctuation">;</span> <span class="token comment">/* column 1 */</span>
-colno<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">30</span><span class="token punctuation">;</span> <span class="token comment">/* column 2 */</span>
-<span class="token function">add_constraintex</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> sparserow<span class="token punctuation">,</span> colno<span class="token punctuation">,</span> LE<span class="token punctuation">,</span> <span class="token number">4000</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">/* constructs the row: 110x + 30y &lt;= 4000 */</span>
-<span class="token function">set_add_rowmode</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> FALSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token comment">// You can also set the row name to name the constraints</span>
-<span class="token function">set_row_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"row1"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token function">set_row_name</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"row2"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><p><input disabled="" type="checkbox">  Note that for <strong>add_constraint</strong> (and <strong>add_constraintex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …, that is why row[1+2] must have <code>three</code> elements</p>
-</li>
-<li><p><input disabled="" type="checkbox">  add_constraintex has the possibility to specify only the non-zero elements. In that case <em>colno</em> specifies the column numbers of the non-zero elements. Both <em>row</em> and <em>colno</em> are then zero-based arrays. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Note that <strong>add_constraintex</strong> behaves the same as <strong>add_constraint</strong> when <em>colno</em> is NULL.</p>
-</li>
-<li><p><input disabled="" type="checkbox">  LE:  Less than or equal (&lt;=), EQ:  Equal (=), GE:  Greater than or equal (&gt;=)</p>
-</li>
-<li><p><input disabled="" type="checkbox">  Note that: <strong>ROW0</strong> is the objective function, so when index the constraints start from 1, for instance <code> set_mat(lp, 1, 1, 3.14);</code> set the first constaints to be <code>3.14x+210y &lt;= 15000</code>, also when you iterate through variables you must start with 1 (strange it not start with zero)</p>
-</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>COL0 (Unsed)</th>
-<th>COL1 (X)</th>
-<th>COL2 (Y)</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>ROW0 (Obj)</td>
-<td>X</td>
-<td>143</td>
-<td>60</td>
-</tr>
-<tr>
-<td>ROW1 (Cons1)</td>
-<td>X</td>
-<td>120</td>
-<td>210</td>
-</tr>
-<tr>
-<td>ROW2 (Cons2)</td>
-<td>X</td>
-<td>110</td>
-<td>30</td>
-</tr>
-</tbody></table>
-<ol start="3">
-<li><h4 id="Set-objective"><a href="#Set-objective" class="headerlink" title="Set objective"></a>Set objective</h4></li>
-</ol>
-<p>There are four functions to set your objective function</p>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">set_obj_fn</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> REAL <span class="token operator">*</span>row<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">set_obj_fnex</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> <span class="token keyword">int</span> count<span class="token punctuation">,</span> REAL <span class="token operator">*</span>row<span class="token punctuation">,</span> <span class="token keyword">int</span> <span class="token operator">*</span>colno<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">str_set_obj_fn</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> <span class="token keyword">char</span> <span class="token operator">*</span>row_string<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">unsigned</span> <span class="token keyword">char</span> <span class="token function">set_obj</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">,</span> <span class="token keyword">int</span> column<span class="token punctuation">,</span> REAL value<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>Note that it is advised to set the objective function before adding rows via <a href="http://lpsolve.sourceforge.net/5.5/add_constraint.htm">add_constraint, add_constraintex, str_add_constraint</a>. This especially for larger models. This will be much more performant than adding the objective function afterwards (Here, we did not use it in such way).</p>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c">REAL row<span class="token punctuation">[</span><span class="token number">1</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">/* must be 1 more then number of columns ! */</span>
-<span class="token comment">/* Create a new LP model */</span>
-row<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">143</span><span class="token punctuation">;</span>
-row<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">60</span><span class="token punctuation">;</span>
-<span class="token function">set_obj_fn</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> row<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">/* constructs the obj: 143x + 60y */</span>
-
-<span class="token comment">/* Another way using set_obj_fnex */</span>
-REAL sparserow<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">/* must be the number of non-zero values */</span>
-<span class="token keyword">int</span> colno<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-colno<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">143</span><span class="token punctuation">;</span> <span class="token comment">/* column 1 */</span>
-colno<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span> sparserow<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">60</span><span class="token punctuation">;</span> <span class="token comment">/* column 2 */</span>
-<span class="token function">set_obj_fnex</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> sparserow<span class="token punctuation">,</span> colno<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><p><input disabled="" type="checkbox">  Note that for <strong>set_obj_fn</strong> (and <strong>set_obj_fnex</strong> when <em>colno</em> is NULL) element 0 of the array is not considered (i.e. ignored). Column 1 is element 1, column 2 is element 2, …</p>
-</li>
-<li><p><strong>set_obj_fnex</strong> has the possibility to specify only the non-zero elements. In that case <em>colno</em> specifies the column numbers of the non-zero elements. This will speed up building the model considerably if there are a lot of zero values. In most cases the matrix is sparse and has many zero value. Thus it is almost always better to use <strong>set_obj_fnex</strong> instead of <strong>set_obj_fn</strong>. <strong>set_obj_fnex</strong> is always at least as performant as <strong>set_obj_fn</strong>. Note that unspecified values by <strong>set_obj_fnex</strong> are set to zero.</p>
-</li>
-<li><p><input disabled="" type="checkbox">  The <strong>set_obj</strong> function sets the objective value for the specified column. If multiple objective values must be set, it is more performant to use <strong>set_obj_fnex</strong>.</p>
-</li>
-</ul>
-<ol start="4">
-<li><h4 id="Solve-problem"><a href="#Solve-problem" class="headerlink" title="Solve problem"></a>Solve problem</h4></li>
-</ol>
-<p>First you need to tell lpsolve whether you want to maximize or minimize ojective function, the call <code>solve </code> function to solve it</p>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">set_maxim</span><span class="token punctuation">(</span>lp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">/* Just out of curioucity, now show the model in lp format on screen */</span>
-<span class="token function">write_LP</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token constant">stdout</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
-<span class="token comment">/* I only want to see important messages on screen while solving */</span>
-<span class="token function">set_verbose</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> IMPORTANT<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-<span class="token comment">/* Now let lpsolve calculate a solution */</span>
-<span class="token keyword">int</span> ret <span class="token operator">=</span> <span class="token function">solve</span><span class="token punctuation">(</span>lp<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>The solve will return integer values to indicate the state of solving process <code>OPTIMAL </code>, <code>SUBOPTIMAL </code>, <code>INFEASIBLE </code> …, you can use these values to judge whether lpsolve successfully solve the problem.</p>
-<ol start="5">
-<li><h4 id="Get-the-result"><a href="#Get-the-result" class="headerlink" title="Get the result"></a>Get the result</h4></li>
-</ol>
-<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">/* Returns the value of the objective function. */</span>
-REAL <span class="token function">get_objective</span><span class="token punctuation">(</span>lprec <span class="token operator">*</span>lp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Objective value: %f\n"</span><span class="token punctuation">,</span> <span class="token function">get_objective</span><span class="token punctuation">(</span>lp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token comment">/* There are two ways to get final variable value */</span>
-REAL var<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">*</span>ptr_var<span class="token punctuation">;</span>
-<span class="token function">get_variables</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> var<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token function">get_ptr_variables</span><span class="token punctuation">(</span>lp<span class="token punctuation">,</span> <span class="token operator">&amp;</span>ptr_var<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><input disabled="" type="checkbox"> The <strong>get_variables</strong>, <strong>get_ptr_variables</strong> functions retrieve the values of the variables. These values are only valid after a successful <a href="http://lpsolve.sourceforge.net/5.5/solve.htm">solve</a> or <a href="http://lpsolve.sourceforge.net/5.5/lag_solve.htm">lag_solve</a>. Function <strong>get_variables</strong> needs an array that is already dimensioned with <a href="http://lpsolve.sourceforge.net/5.5/get_Ncolumns.htm">get_Ncolumns</a> elements. <strong>get_ptr_variables</strong> returns a pointer to an array already dimensioned by lp_solve. Element 0 will contain the value of the first variable, element 1 of the second variable, …</li>
-</ul>
-<h4 id="IMPORTANT"><a href="#IMPORTANT" class="headerlink" title="IMPORTANT"></a>IMPORTANT</h4><p><strong>!!! The offical <a href="http://lpsolve.sourceforge.net/5.5/">lp_solve_API_reference</a> has may examples, after this, you should look those examples to further familiar with lp_solve.</strong>  The code of this turtorial can be found <strong><a href="https://github.com/lirui-shanghaitech/llvm_notes/tree/main/TUR_APP/lpsolve_tur">here</a></strong>.</p>
-]]></content>
-      <categories>
-        <category>HLS</category>
-      </categories>
-      <tags>
-        <tag>ILP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>LLVM IR Tutorial</title>
-    <url>/2021/03/24/llvm-ir/</url>
-    <content><![CDATA[<h3 id="LLVM-IR-notes"><a href="#LLVM-IR-notes" class="headerlink" title="LLVM IR notes"></a>LLVM IR notes</h3><h4 id="Basic-constructs"><a href="#Basic-constructs" class="headerlink" title="Basic constructs"></a>Basic constructs</h4><h5 id="Global-variable"><a href="#Global-variable" class="headerlink" title="Global variable"></a>Global variable</h5><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int variable &#x3D; 21;
-@variable &#x3D; global i32 21<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<p>Globals are prefixed with the <code>@</code> character. You can see that also functions, such as <code>main</code>, are also global variables in LLVM. <strong>LLVM views global variables as pointers;</strong>  so you must explicitly dereference the global variable using the <code>load</code> instruction when accessing its value, likewise you must explicitly store the value of a global variable using the <code>store</code> instruction.</p>
-<span id="more"></span>
-
-<h5 id="Local-variables"><a href="#Local-variables" class="headerlink" title="Local variables"></a>Local variables</h5><ul>
-<li>Temporary variables/Registers: created by introducing a new symbol for the variable</li>
-<li>Stack-allocated local variables: created by allocating the variable on the stack</li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">%reg &#x3D; add i32 4, 2
-%stack &#x3D; alloca i32<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<p>Notice that <code>alloca</code> yields a pointer to the allocated type. As is generally the case in LLVM, you must explicitly use a <code>load</code> or <code>store</code> instruction to read or write the value respectively.</p>
-<h5 id="Constants"><a href="#Constants" class="headerlink" title="Constants"></a>Constants</h5><ul>
-<li>Constants that do <em>not</em> occupy allocated memory.</li>
-<li>Constants that <em>do</em> occupy allocated memory.</li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">%1 &#x3D; add i32 %0, 17     ; 17 is an inlined constant
-
-@hello &#x3D; internal constant [6 x i8] c&quot;hello\00&quot;
-%struct &#x3D; type &#123; i32, i8 &#125;
-@struct_constant &#x3D; internal constant %struct &#123; i32 16, i8 4 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>Such a constant is really a global variable whose visibility can be limited with <code>private</code> or <code>internal</code> so that it is invisible outside the current module.</p>
-<h5 id="Structures"><a href="#Structures" class="headerlink" title="Structures"></a>Structures</h5><pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">struct Foo &#123; int a; char *b; double c; &#125;;
-%Foo &#x3D; type &#123;
-    i32,        ; 0: a
-    i8*,        ; 1: b
-    double      ; 2: c
-&#125;
-&#x2F;&#x2F;---------------------------------------------------------------------------------------
-Foo foo;
-char **bptr &#x3D; &amp;foo.b;
-
-%foo &#x3D; alloca %Foo
-&#x2F;&#x2F; char **bptr &#x3D; &amp;foo.b GetElementPointer GEP instruction
-%1 &#x3D; getelementptr %Foo, %Foo* %foo, i32 0, i32 1
-&#x2F;&#x2F;---------------------------------------------------------------------------------------
-Foo bar[100];
-bar[17].c &#x3D; 0.0;
-
-; Foo bar[100]
-%bar &#x3D; alloca %Foo, i32 100
-; bar[17].c &#x3D; 0.0
-%2 &#x3D; getelementptr %Foo, %Foo* %bar, i32 17, i32 2
-store double 0.0, double* %2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h5 id="Casts"><a href="#Casts" class="headerlink" title="Casts"></a>Casts</h5><ul>
-<li><strong>Bitwise casts (type casts)</strong>: A bitwise cast (<code>bitcast</code>) reinterprets a given bit pattern without changing any bits in the operand. </li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">Foo *foo &#x3D; (Foo *) malloc(sizeof(Foo));
-
-%1 &#x3D; call i8* @malloc(i32 4)
-%foo &#x3D; bitcast i8* %1 to %Foo*<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><strong>Zero-extending casts (unsigned upcasts)</strong>: To upcast an unsigned value like in the example below using <code>zext</code></li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">uint8 byte &#x3D; 117;
-uint32 word;
-word &#x3D; byte;
-
-@byte &#x3D; global i8 117
-@word &#x3D; global i32 0
-%1 &#x3D; load i8, i8* @byte
-%2 &#x3D; zext i8 %1 to i32
-store i32 %2, i32* @word<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><strong>Sign-extending casts (signed upcasts)</strong>: To upcast a signed value, you replace the <code>zext</code> instruction with the <code>sext</code> instruction </li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">@char &#x3D; global i8 -17
-@int  &#x3D; global i32 0
-%1 &#x3D; load i8, i8* @char
-%2 &#x3D; sext i8 %1 to i32
-store i32 %2, i32* @int<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><strong>Truncating casts (signed and unsigned downcasts)</strong>: Both signed and unsigned integers use the same instruction, <code>trunc</code>, to reduce the size of the number in question. </li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">@int &#x3D; global i32 -1
-@char &#x3D; global i8 0
-%1 &#x3D; load i32, i32* @int
-%2 &#x3D; trunc i32 %1 to i8
-store i8 %2, i8* @char<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><strong>Floating-point extending casts (float upcasts)</strong>: Floating points numbers can be extended using the <code>fpext</code> instruction</li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">@small &#x3D; global float 1.25
-@large &#x3D; global double 0.0
-%1 &#x3D; load float, float* @small
-%2 &#x3D; fpext float %1 to double
-store double %2, double* @large<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><strong>Floating-point truncating casts (float downcasts)</strong>: Likewise, a floating point number can be truncated to a smaller size using <code>fptrunc</code></li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">@large &#x3D; global double 1.25
-@small &#x3D; global float 0.0
-%1 &#x3D; load double, double* @large
-%2 &#x3D; fptrunc double %1 to float
-store float %2, float* @small<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><strong>Pointer-to-integer casts</strong>: Pointers do not support arithmetic, which is sometimes needed when doing systems programming. LLVM has support for casting pointer types to integer types using the <code>ptrtoint</code> instruction.</li>
-<li><strong>Integer-to-pointer casts</strong>: The <code>inttoptr</code> instruction is used to cast an integer back to a pointer</li>
-<li><strong>Address-space casts (pointer casts)</strong>.</li>
-</ul>
-<h5 id="Function-Definitions-and-Declarations"><a href="#Function-Definitions-and-Declarations" class="headerlink" title="Function Definitions and Declarations"></a>Function Definitions and Declarations</h5><ul>
-<li>Simple definition and Declaration</li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">define  i32 @Bar() nounwind &#123; ret i32 17 &#125;
-declare i32 @Bar(i32 %value)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<ul>
-<li>With variable number of parameters</li>
-</ul>
-<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">declare i32 @printf(i8*, ...) nounwind
-
-@.textstr &#x3D; internal constant [20 x i8] c&quot;Argument count: %d\0A\00&quot;
-
-define i32 @main(i32 %argc, i8** %argv) nounwind &#123;
-    ; printf(&quot;Argument count: %d\n&quot;, argc)
-    %1 &#x3D; call i32 (i8*, ...) @printf(i8* getelementptr([20 x i8], [20 x i8]* @.textstr, i32 0, i32 0), i32 %argc)
-    ret i32 0
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>Overloading: function names are mangled in the LLVM IR level</li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">define i32 @_Z8functionii(i32 %a, i32 %b) #0 &#123;
-; [...]
-  ret i32 %5
-&#125;
-
-define double @_Z8functionddd(double %a, double %b, double %x) #0 &#123;
-; [...]
-  ret double %8
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><p>For the detailed description of <code>struct</code> arguments in the function please refer to this <a href="https://mapping-high-level-constructs-to-llvm-ir.readthedocs.io/en/latest/basic-constructs/functions.html#struct-by-value-as-parameter-or-return-value">link</a></p>
-</li>
-<li><p>Function Points</p>
-</li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">int (*Function)(char *buffer);
-@Function &#x3D; global i32(i8*)* null<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h5 id="Unions"><a href="#Unions" class="headerlink" title="Unions"></a>Unions</h5><p>TODO: since it is not commonly used today</p>
-<h4 id="Control-Flow-Constructs"><a href="#Control-Flow-Constructs" class="headerlink" title="Control-Flow Constructs"></a>Control-Flow Constructs</h4><h5 id="if-then-else-conversion"><a href="#if-then-else-conversion" class="headerlink" title="if-then-else conversion"></a><code>if-then-else</code> conversion</h5><p>In LLVM IR control-flow is implemented by jumping between <em>basic blocks</em>, which contain instruction sequences that do not change control flow. Each basic block ends with an instruction that changes the control flow. The most common branching instruction is<a href="https://mapping-high-level-constructs-to-llvm-ir.readthedocs.io/en/latest/control-structures/if-then-else.html#brlink"> <code>br</code> </a></p>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">&#x2F;&#x2F; Usage of br instruction
-br i1 %cond, label %iftrue, label %iffalse
-br label %dest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<p>Max function example</p>
-<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int max(int a, int b) &#123;
-  if (a &gt; b) &#123;
-    return a;
-  &#125; else &#123;
-    return b;
-  &#125;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>Translate into LLVM IR: there are four basic blocks</p>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">define i32 @max(i32 %a, i32 %b) &#123;
-entry:
-  %retval &#x3D; alloca i32, align 4
-  %0 &#x3D; icmp sgt i32 %a, %b
-  br i1 %0, label %btrue, label %bfalse
-
-btrue:                                      ; preds &#x3D; %2
-  store i32 %a, i32* %retval, align 4
-  br label %end
-
-bfalse:                                     ; preds &#x3D; %2
-  store i32 %b, i32* %retval, align 4
-  br label %end
-
-end:                                     ; preds &#x3D; %btrue, %bfalse
-  %1 &#x3D; load i32, i32* %retval, align 4
-  ret i32 %1
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h5 id="PHI"><a href="#PHI" class="headerlink" title="PHI"></a><code>PHI</code></h5><p>The <code>phi</code> instruction is named after the φ function used in the theory of SSA. This functions magically chooses the right value, depending on the control flow. In LLVM you have to manually specify the name of the value and the previous basic block.</p>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">%retval &#x3D; phi i32 [%a, %btrue], [%b, %bfalse]<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>After using the <code>PHI</code> function the above max function can be transform to</p>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">define i32 @max(i32 %a, i32 %b) &#123;
-entry:
-  %0 &#x3D; icmp sgt i32 %a, %b
-  br i1 %0, label %btrue, label %bfalse
-
-btrue:                                      ; preds &#x3D; %2
-  br label %end
-
-bfalse:                                     ; preds &#x3D; %2
-  br label %end
-
-end:                                     ; preds &#x3D; %btrue, %bfalse
-  %retval &#x3D; phi i32 [%a, %btrue], [%b, %bfalse]
-  ret i32 %retval
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>Usually the compiler back end will use the stack for implementing the <code>phi</code> instruction. However, if we use a little more optimization in the back end (i.e., <code>llc -O1</code>), we can get a more optimized version.</p>
-<h4 id="Object-Oriented-Constructs"><a href="#Object-Oriented-Constructs" class="headerlink" title="Object Oriented Constructs"></a>Object Oriented Constructs</h4><h5 id="Classes"><a href="#Classes" class="headerlink" title="Classes"></a>Classes</h5><p>A class is nothing more than a structure with an associated set of functions that take an implicit first parameter, namely a pointer to the structure. Therefore, is is very trivial to map a class to LLVM IR</p>
-<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &lt;stddef.h&gt;
-class Foo
-&#123;
-public:
-    Foo() &#123; _length &#x3D; 0; &#125;
-
-    void SetLength(size_t value) &#123; _length &#x3D; value; &#125;
-private:
-    size_t _length;
-&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>first transform this code into two separate pieces:</p>
-<ul>
-<li>The structure definition.</li>
-<li>The list of methods, including the constructor.</li>
-</ul>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">; The structure definition for class Foo.
-%Foo &#x3D; type &#123; i32 &#125;
-
-; The default constructor for class Foo.
-define void @Foo_Create_Default(%Foo* %this) nounwind &#123;
-    %1 &#x3D; getelementptr %Foo, %Foo* %this, i32 0, i32 0
-    store i32 0, i32* %1
-    ret void
-&#125;
-
-; The Foo::SetLength() method.
-define void @Foo_SetLength(%Foo* %this, i32 %value) nounwind &#123;
-    %1 &#x3D; getelementptr %Foo, %Foo* %this, i32 0, i32 0
-    store i32 %value, i32* %1
-    ret void
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>Then we make sure that the constructor (<code>Foo_Create_Default</code>) is invoked whenever an instance of the structure is created.</p>
-<h5 id="Virtual-Methods"><a href="#Virtual-Methods" class="headerlink" title="Virtual Methods"></a>Virtual Methods</h5><p>A virtual method is no more than a compiler-controlled function pointer. Each virtual method is recorded in the <code>vtable</code>, which is a structure of all the function pointers needed by a given class. Please refer this <a href="https://mapping-high-level-constructs-to-llvm-ir.readthedocs.io/en/latest/object-oriented-constructs/index.html">link</a> to learn more about Objected-Oriented Constructs.</p>
-<h4 id="Some-important-Instructions"><a href="#Some-important-Instructions" class="headerlink" title="Some important Instructions"></a>Some important Instructions</h4><h5 id="getelementptr-Ins-also-other-fantastic-notes-from-official-website"><a href="#getelementptr-Ins-also-other-fantastic-notes-from-official-website" class="headerlink" title="getelementptr Ins, also other fantastic notes from official website"></a><a href="https://llvm.org/docs/LangRef.html#id1743"><code>getelementptr</code> Ins</a>, also other fantastic notes from official <a href="https://llvm.org/docs/GetElementPtr.html">website</a></h5><p>Syntax</p>
-<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">&lt;result&gt; &#x3D; getelementptr &lt;ty&gt;, &lt;ty&gt;* &lt;ptrval&gt;&#123;, [inrange] &lt;ty&gt; &lt;idx&gt;&#125;*
-&lt;result&gt; &#x3D; getelementptr inbounds &lt;ty&gt;, &lt;ty&gt;* &lt;ptrval&gt;&#123;, [inrange] &lt;ty&gt; &lt;idx&gt;&#125;*
-&lt;result&gt; &#x3D; getelementptr &lt;ty&gt;, &lt;ptr vector&gt; &lt;ptrval&gt;, [inrange] &lt;vector index type&gt; &lt;idx&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-]]></content>
-      <categories>
-        <category>HLS</category>
-      </categories>
-      <tags>
-        <tag>LLVM</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Datapath synthesize in Verilog</title>
-    <url>/2021/02/21/verilog-datapath-md/</url>
-    <content><![CDATA[<h6 id="锁存器的综合："><a href="#锁存器的综合：" class="headerlink" title="锁存器的综合："></a>锁存器的综合：</h6><pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token keyword">module</span> latch <span class="token punctuation">(</span>
-    <span class="token keyword">output</span> q_out<span class="token punctuation">,</span>
-    <span class="token keyword">input</span> data_in<span class="token punctuation">,</span> enable<span class="token punctuation">,</span> rst_b
-<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">assign</span> q_out <span class="token operator">=</span> <span class="token operator">!</span><span class="token punctuation">(</span>rst_b <span class="token operator">==</span> <span class="token number">1'b0</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token number">0</span><span class="token punctuation">:</span>enable <span class="token operator">?</span> data_in<span class="token punctuation">:</span>q_out<span class="token punctuation">;</span>
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<span id="more"></span>
-
-<ul>
-<li>当一条带条件操作符的连续赋值语句出现反馈时，综合工具将判断出它具有一个锁存器的功能，并给出它的硬件实现。</li>
-<li>在赋值表达式的右逻辑发生变化的所有情况下，必须给行为中包含的所有变量赋值，否则会产生不想要的锁存器。因此所有用以实现组合逻辑的电平敏感行为电路的输入信号都必须包含于事件控制表达式中</li>
-<li>电平敏感周期型行为中，赋值语句的右表达式中任意信号都不再出现于其左表达式中 （如果想要生成组合逻辑电路）</li>
-</ul>
-<pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token comment">//有意综合锁存器，注意非阻塞赋值&lt;= 的运用</span>
-
-<span class="token comment">// 综合成带反馈的多路复用器结构</span>
-<span class="token keyword">module</span> latch_if1 <span class="token punctuation">(</span>
-    <span class="token keyword">output</span> <span class="token keyword">reg</span> <span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> data_out<span class="token punctuation">,</span> 
-    <span class="token keyword">input</span> <span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> data_in<span class="token punctuation">,</span> <span class="token keyword">input</span> latch_enable
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token important">always @</span> <span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>latch_enable<span class="token punctuation">)</span> data_out <span class="token operator">&lt;=</span> data_in<span class="token punctuation">;</span> 
-        <span class="token keyword">else</span> data_out <span class="token operator">&lt;=</span> data_out<span class="token punctuation">;</span> 
-<span class="token keyword">endmodule</span>
-
-<span class="token comment">// 综合成硬件锁存器</span>
-<span class="token keyword">module</span> latch_if2 <span class="token punctuation">(</span>
-    <span class="token keyword">output</span> <span class="token keyword">reg</span> <span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> data_out<span class="token punctuation">,</span> 
-    <span class="token keyword">input</span> <span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> data_in<span class="token punctuation">,</span> <span class="token keyword">input</span> latch_enable
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token important">always @</span> <span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>latch_enable<span class="token punctuation">)</span> data_out <span class="token operator">&lt;=</span> data_in<span class="token punctuation">;</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>In a level-sensitive cyclic behavior. If a case statement has a default assignment with feedback (i.e., the variable is explicitly assigned to itself), the synthesis tool will form a mux structure with feedback. </li>
-<li>Likewise, if an if statement in a level-sensitive behavior assigns a variable to itself, the result will be a mux structure with feedback.</li>
-<li>If the conditional operator is used in a continuous assignment, the result will be a mux with feedback. If it is used in a level-sensitive cyclic behavior, the result will be a hardware latch. </li>
-<li>If the conditional operator is used in an edge-sensitive cyclic behavior, the result will be a register with a gated data path in a feedback configuration with the output of the register.</li>
-</ul>
-<h6 id="触发器的综合："><a href="#触发器的综合：" class="headerlink" title="触发器的综合："></a>触发器的综合：</h6><p>A register variable in an edge-sensitive behavior will be synthesized as a flip-flop</p>
-<p>(1) A variable that is referenced within an edge-sensitive behavior before it is assigned value in the behavior will be synthesized as the output of a flip-flop.</p>
-<p>(2) if it is referenced within the behavior before it is assigned value.</p>
-<p>(3) if it is assigned value in only some of the branches of the activity within the behavior.</p>
-<pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token comment">// 异步复位D触发器</span>
-<span class="token keyword">module</span> asynch_df_behav <span class="token punctuation">(</span>
-	<span class="token keyword">input</span> data<span class="token punctuation">,</span> set_b<span class="token punctuation">,</span> rst_b<span class="token punctuation">,</span> clk<span class="token punctuation">,</span>
-	<span class="token keyword">output</span> <span class="token keyword">reg</span> q<span class="token punctuation">,</span> outputq_bar
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token important">always @</span><span class="token punctuation">(</span><span class="token keyword">posedge</span> clk<span class="token punctuation">,</span> <span class="token keyword">negedge</span> set_b<span class="token punctuation">,</span> <span class="token keyword">negedge</span> rst_b<span class="token punctuation">)</span> <span class="token keyword">begin</span>
-        <span class="token function">if</span><span class="token punctuation">(</span>rst_b <span class="token operator">==</span> <span class="token number">1'b0</span><span class="token punctuation">)</span>q <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">else</span> <span class="token function">if</span><span class="token punctuation">(</span>set_b <span class="token operator">==</span> <span class="token number">1'b0</span><span class="token punctuation">)</span>q <span class="token operator">&lt;=</span> <span class="token number">1</span><span class="token punctuation">;</span> 
-    	<span class="token keyword">else</span> q <span class="token operator">&lt;=</span> data<span class="token punctuation">;</span> <span class="token comment">// synchronized activity </span>
-    <span class="token keyword">end</span>
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>综合工具只支持全部为边缘敏感或全部为电平敏感的事件控制表达式</li>
-<li>always中的语句块为顺序执行，并且反复无限的执行</li>
-<li>Recall that an incomplete conditional statement (i.e., an if … else statement or a case statement) in a level-sensitive cyclic behavior will synthesize to a latch. However, if the behavior is edge-sensitive, these types of statements will not create latches, but they will synthesize logic that implements a “clock enable,” because the incompletestatements imply that the affected variables should not change under the conditions implied by the logic, even though the clock makes a transition.</li>
-</ul>
-<h6 id="比较器的综合-连续赋值与寄存器传输模型的比较-："><a href="#比较器的综合-连续赋值与寄存器传输模型的比较-：" class="headerlink" title="比较器的综合 (连续赋值与寄存器传输模型的比较)："></a>比较器的综合 (连续赋值与寄存器传输模型的比较)：</h6><pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token keyword">module</span> compare_32_CA #<span class="token punctuation">(</span><span class="token keyword">parameter</span> word__size <span class="token operator">=</span> <span class="token number">32</span><span class="token punctuation">)</span><span class="token punctuation">(</span>
-    <span class="token keyword">output</span> A_gt_B<span class="token punctuation">,</span>A_lt_B<span class="token punctuation">,</span>A_eq_B<span class="token punctuation">,</span> 
-    <span class="token keyword">input</span> <span class="token punctuation">[</span>word__size<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">:</span>O<span class="token punctuation">]</span> A<span class="token punctuation">,</span> B
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token keyword">assign</span> A_gt_B <span class="token operator">=</span> <span class="token punctuation">(</span>A<span class="token operator">></span> B<span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">assign</span> A_lt_B <span class="token operator">=</span> <span class="token punctuation">(</span>A<span class="token operator">&lt;</span> B<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token keyword">assign</span> A_eq_B <span class="token operator">=</span> <span class="token punctuation">(</span>A<span class="token operator">==</span> B<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>关键词<code>assign</code> 定义了连续赋值，将右边等式的布尔表达式与左边的变量联系起来</li>
-<li>基于连续赋值的建模方式用于描述电平敏感的行为，连续赋值语句之间，基本门之间以及描述中的所有行为模块之间都是并行执行的</li>
-</ul>
-<pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token keyword">module</span> Comp_2_RTL <span class="token punctuation">(</span>
-    <span class="token keyword">output</span> <span class="token keyword">reg</span> A_lt_B<span class="token punctuation">,</span>A_gt_B<span class="token punctuation">,</span>A_eq_B<span class="token punctuation">,</span> 
-    <span class="token keyword">input</span> A1<span class="token punctuation">,</span> A0<span class="token punctuation">,</span> B1<span class="token punctuation">,</span> B0
-<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token important">always @</span> <span class="token punctuation">(</span>A0<span class="token punctuation">,</span> A1<span class="token punctuation">,</span> B0<span class="token punctuation">,</span> B1<span class="token punctuation">)</span> <span class="token keyword">begin</span> 
-        A_lt_B <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">&#123;</span>A1<span class="token punctuation">,</span> A0<span class="token operator">&#125;</span> <span class="token operator">&lt;</span> <span class="token operator">&#123;</span>B1<span class="token punctuation">,</span> B0<span class="token operator">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
-        A_gt_B <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">&#123;</span>A1<span class="token punctuation">,</span> A0<span class="token operator">&#125;</span> <span class="token operator">></span> <span class="token operator">&#123;</span>B1<span class="token punctuation">,</span> B0<span class="token operator">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
-        A_eq_B <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">&#123;</span>A1<span class="token punctuation">,</span> A0<span class="token operator">&#125;</span> <span class="token operator">==</span> <span class="token operator">&#123;</span>B1<span class="token punctuation">,</span> B0<span class="token operator">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token keyword">end</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>无论数据通道的哪一位在任何时间发生变化，电平敏感的周期性行为都将不断的进行，不断更新它的输出</li>
-<li>周期性行为的语句<code>顺序执行</code>，无限循环</li>
-</ul>
-<h6 id="移位寄存器的综合-阻塞与非阻塞赋值的区别-："><a href="#移位寄存器的综合-阻塞与非阻塞赋值的区别-：" class="headerlink" title="移位寄存器的综合 (阻塞与非阻塞赋值的区别)："></a>移位寄存器的综合 (阻塞与非阻塞赋值的区别)：</h6><pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token keyword">module</span> shiftreg_PA <span class="token punctuation">(</span>
-    <span class="token keyword">output</span> <span class="token keyword">reg</span> A<span class="token punctuation">,</span> 
-    <span class="token keyword">input</span> E<span class="token punctuation">,</span> clk<span class="token punctuation">,</span> rst
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token keyword">reg</span> B<span class="token punctuation">,</span> C<span class="token punctuation">,</span> D<span class="token punctuation">;</span> 
-    <span class="token important">always @</span> <span class="token punctuation">(</span><span class="token keyword">posedge</span> clk<span class="token punctuation">,</span> <span class="token keyword">posedge</span> rst<span class="token punctuation">)</span> <span class="token keyword">begin</span> 
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>rst <span class="token operator">==</span> <span class="token number">1'b1</span><span class="token punctuation">)</span> <span class="token keyword">begin</span> 
-            A<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> B<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> C<span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> D<span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> 
-        <span class="token keyword">end</span> <span class="token keyword">else</span> <span class="token keyword">begin</span> 
-            A<span class="token operator">=</span>B<span class="token punctuation">;</span> B<span class="token operator">=</span> C<span class="token punctuation">;</span> C<span class="token operator">=</span> D<span class="token punctuation">;</span> D<span class="token operator">=</span> E<span class="token punctuation">;</span> 
-        <span class="token keyword">end</span>
-    <span class="token keyword">end</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>阻塞赋值<code>=</code> ，进行过程赋值的语句必须在行为中的下一条语句执行之前完成执行过程（把结果写入寄存器中）。紧随其后的过程赋值语句被阻塞执行，直到正在执行的过程赋值语句完成执行任务时为止</li>
-</ul>
-<pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token keyword">module</span> shiftreg_nb_V05 <span class="token punctuation">(</span>
-	<span class="token keyword">output</span> <span class="token keyword">reg</span> A<span class="token punctuation">,</span>
-    <span class="token keyword">input</span> E<span class="token punctuation">,</span> clk<span class="token punctuation">,</span> rst
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token keyword">reg</span> B<span class="token punctuation">,</span>C<span class="token punctuation">,</span> D<span class="token punctuation">;</span> 
-    <span class="token important">always @</span> <span class="token punctuation">(</span><span class="token keyword">posedge</span> clk<span class="token punctuation">,</span> <span class="token keyword">posedge</span> rst<span class="token punctuation">)</span> <span class="token keyword">begin</span> 
-        <span class="token function">if</span><span class="token punctuation">(</span>rst<span class="token operator">==</span> <span class="token number">1'b1</span><span class="token punctuation">)</span> <span class="token keyword">begin</span> A<span class="token operator">&lt;=</span><span class="token number">0</span><span class="token punctuation">;</span> B<span class="token operator">&lt;=</span><span class="token number">0</span><span class="token punctuation">;</span>C<span class="token operator">&lt;=</span><span class="token number">0</span><span class="token punctuation">;</span> D<span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token keyword">end</span> 
-    	<span class="token keyword">else</span> <span class="token keyword">begin</span> 
-            A <span class="token operator">&lt;=</span> B<span class="token punctuation">;</span> <span class="token comment">// D &lt;= E; </span>
-            B <span class="token operator">&lt;=</span> C<span class="token punctuation">;</span> <span class="token comment">// C &lt;= D; </span>
-            C <span class="token operator">&lt;=</span> D<span class="token punctuation">;</span> <span class="token comment">// B &lt;= C; </span>
-            D <span class="token operator">&lt;=</span> E<span class="token punctuation">;</span> <span class="token comment">// A &lt;= B; </span>
-        <span class="token keyword">end</span>
-    <span class="token keyword">end</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>非阻塞赋值<code>&lt;=</code> , 非阻塞赋值语句可以并发的执行，语句在列表中的排列顺序对最终的结果没有影响，一般仿真器在给左边目标赋值之前要计算每一个右表达式的值</li>
-<li>非阻塞赋值表达式的左变量必须为<code>reg</code>类型</li>
-<li>边沿敏感（同步）操作尽量用非阻塞赋值来完成，组合逻辑尽量用阻塞赋值来描述</li>
-</ul>
-<h6 id="计数器的综合："><a href="#计数器的综合：" class="headerlink" title="计数器的综合："></a>计数器的综合：</h6><h6 id="移位寄存器的综合："><a href="#移位寄存器的综合：" class="headerlink" title="移位寄存器的综合："></a>移位寄存器的综合：</h6><h6 id="寄存器的综合："><a href="#寄存器的综合：" class="headerlink" title="寄存器的综合："></a>寄存器的综合：</h6><pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token keyword">module</span> Register_File #<span class="token punctuation">(</span><span class="token keyword">parameter</span> word_size <span class="token operator">=</span> <span class="token number">32</span><span class="token punctuation">,</span> addr_size <span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">(</span>
-    <span class="token keyword">output</span> <span class="token punctuation">[</span>word_size<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> Data_Out_1<span class="token punctuation">,</span> Data_Out_2<span class="token punctuation">,</span> 
-	<span class="token keyword">input</span> <span class="token punctuation">[</span>word_size<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span> Data_in<span class="token punctuation">,</span> 
-	<span class="token keyword">input</span> <span class="token punctuation">[</span>addr_size<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span> Read_Addr_1<span class="token punctuation">,</span> Read_Addr_2<span class="token punctuation">,</span> Write_Addr<span class="token punctuation">,</span> 
-	<span class="token keyword">input</span> Write_Enable<span class="token punctuation">,</span> Clock
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token keyword">reg</span> <span class="token punctuation">[</span>word_size<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span> Reg_File <span class="token punctuation">[</span><span class="token number">31</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">// 32bit x32 word memory declaration </span>
-	<span class="token keyword">assign</span> Data_Out_1 <span class="token operator">=</span> Reg_File<span class="token punctuation">[</span>Read_Addr_1<span class="token punctuation">]</span><span class="token punctuation">;</span>
-	<span class="token keyword">assign</span> Data_Out_2 <span class="token operator">=</span> Reg_File<span class="token punctuation">[</span>Read_Addr_2<span class="token punctuation">]</span><span class="token punctuation">;</span>
-	<span class="token important">always @</span> <span class="token punctuation">(</span><span class="token keyword">posedge</span> Clock<span class="token punctuation">)</span> <span class="token keyword">begin</span> 
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>Write_Enable <span class="token operator">==</span> <span class="token number">1'b1</span><span class="token punctuation">)</span> Reg_File<span class="token punctuation">[</span>Write_Addr<span class="token punctuation">]</span> <span class="token operator">&lt;=</span> Data_in<span class="token punctuation">;</span> 
-    <span class="token keyword">end</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-
-
-<h6 id="组合逻辑的综合："><a href="#组合逻辑的综合：" class="headerlink" title="组合逻辑的综合："></a>组合逻辑的综合：</h6><ul>
-<li>结构化的原语网表</li>
-<li>一系列连续赋值语句</li>
-<li>电平敏感的周期性行为 （内部无反馈并且没有锁存器）</li>
-</ul>
-<h6 id="for的综合："><a href="#for的综合：" class="headerlink" title="for的综合："></a><code>for</code>的综合：</h6><ul>
-<li>Provide a shorter way to express a series of statements</li>
-<li>Loop index variables must be integer type</li>
-<li>Step, start &amp; end value must be constant</li>
-<li>In synthesis, for loops loops are “unrolled” , and then synthesized</li>
-</ul>
-<pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token important">always@</span><span class="token punctuation">(</span> a <span class="token keyword">or</span> b <span class="token punctuation">)</span>
-	<span class="token keyword">begin</span>
-		<span class="token function">for</span><span class="token punctuation">(</span> i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> i<span class="token operator">&lt;</span><span class="token number">4</span><span class="token punctuation">;</span> i<span class="token operator">=</span>i<span class="token operator">+</span><span class="token number">1</span> <span class="token punctuation">)</span>
-			c<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">&amp;</span> b<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
-	<span class="token keyword">end</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>Unrolled版本</p>
-<pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token important">always@</span><span class="token punctuation">(</span> a <span class="token keyword">or</span> b <span class="token punctuation">)</span>
-    <span class="token keyword">begin</span>
-        c<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> a<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">&amp;</span> b<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-        c<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> a<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">&amp;</span> b<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-        c<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> a<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">&amp;</span> b<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-        c<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token operator">=</span> a<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token operator">&amp;</span> b<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-	<span class="token keyword">end</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-
-
-<h6 id="Case和if的综合："><a href="#Case和if的综合：" class="headerlink" title="Case和if的综合："></a><code>Case</code>和<code>if</code>的综合：</h6><pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token comment">// 优先级选择器</span>
-<span class="token keyword">module</span> mux_4pri <span class="token punctuation">(</span>
-    <span class="token keyword">output</span> <span class="token keyword">reg</span> y<span class="token punctuation">,</span> 
-    <span class="token keyword">input</span> a<span class="token punctuation">,</span> b<span class="token punctuation">,</span> c<span class="token punctuation">,</span> d<span class="token punctuation">,</span> sel_a<span class="token punctuation">,</span> sel_b<span class="token punctuation">,</span> sel_c
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token important">always @</span> <span class="token punctuation">(</span>sel_a<span class="token punctuation">,</span> sel_b<span class="token punctuation">,</span> sel_c<span class="token punctuation">,</span> a<span class="token punctuation">,</span> b<span class="token punctuation">,</span> c<span class="token punctuation">,</span> d<span class="token punctuation">)</span>
-<span class="token comment">//  always @ (") Optional wildcard token for complete sensitivity list </span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>sel_a<span class="token operator">==</span><span class="token number">1</span><span class="token punctuation">)</span> y <span class="token operator">=</span> a<span class="token punctuation">;</span> 
-        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>sel_b<span class="token operator">==</span><span class="token number">0</span><span class="token punctuation">)</span> y <span class="token operator">=</span> b<span class="token punctuation">;</span> 
-            <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>sel_c <span class="token operator">==</span><span class="token number">1</span><span class="token punctuation">)</span> y <span class="token operator">=</span> c<span class="token punctuation">;</span> 
-                <span class="token keyword">else</span> y <span class="token operator">=</span> d<span class="token punctuation">;</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li><code>case</code>和<code>if</code>语句一般被综合成组合电路</li>
-<li><code>case</code>语句通常隐含的对首先解码的选项赋予较高优先权，而<code>if</code>语句则隐含指定第一个分支具有更高优先权。综合工具会先判断<code>case</code>中的分支选择是否互斥，如果互斥，综合工具认为它们具有相同的优先级，综合成为一个多路选择器，如何不互斥则综合为优先级结构</li>
-</ul>
-<pre class="line-numbers language-verilog" data-language="verilog"><code class="language-verilog"><span class="token keyword">module</span> alu_with_z1 <span class="token punctuation">(</span>
-    <span class="token keyword">output</span> alu_out<span class="token punctuation">,</span> 
-    <span class="token keyword">input</span> <span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> data_a<span class="token punctuation">,</span> data_b<span class="token punctuation">,</span> <span class="token keyword">input</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> opcode<span class="token punctuation">,</span> <span class="token keyword">input</span> enable
-<span class="token punctuation">)</span><span class="token punctuation">;</span> 
-    <span class="token keyword">reg</span> <span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">]</span> alu_reg<span class="token punctuation">;</span> 
-    <span class="token keyword">assign</span> alu_out <span class="token operator">=</span> <span class="token punctuation">(</span>enable <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">?</span> alu_reg <span class="token punctuation">:</span> <span class="token number">4'bz</span><span class="token punctuation">;</span> 
-    <span class="token important">always @</span> <span class="token punctuation">(</span>opcode<span class="token punctuation">,</span> data_a<span class="token punctuation">,</span> data_b<span class="token punctuation">)</span>
-        <span class="token keyword">case</span> <span class="token punctuation">(</span>opcode<span class="token punctuation">)</span>
-            <span class="token number">3'b001</span><span class="token punctuation">:</span> alu_reg <span class="token operator">=</span> data_a <span class="token operator">|</span>data_b<span class="token punctuation">;</span>
-            <span class="token number">3'b010</span><span class="token punctuation">:</span> alu_reg <span class="token operator">=</span> data_a <span class="token operator">^</span> data_b<span class="token punctuation">;</span>
-            <span class="token number">3'b110</span><span class="token punctuation">:</span> alu_reg <span class="token operator">=</span> <span class="token operator">~</span>data_b<span class="token punctuation">;</span> 
-            <span class="token keyword">default</span><span class="token punctuation">:</span> alu_reg <span class="token operator">=</span> <span class="token number">4'b0</span><span class="token punctuation">;</span> <span class="token comment">// alu_with_z2 has default: alu_reg = 4'bx; </span>
-        <span class="token keyword">endcase</span> 
-<span class="token keyword">endmodule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>缺少默认赋值语句会使<code>寄存器变量</code>输出锁存，综合工具会自动生成锁存器 （在条件未定义时保持输出原值）</li>
-<li>当对默认赋值语句没有限制时（e.g., 4’bx）综合工具将视为无关紧要条件，减少电路所需逻辑</li>
-<li>如果一个条件操作符将<code>z</code>值放在电平敏感行为中连续赋值的右表达式中，那么该语句将会综合成通过组合逻辑驱动的一个三态器件中</li>
-</ul>
-]]></content>
-      <categories>
-        <category>Verilog</category>
-      </categories>
-      <tags>
-        <tag>Verilog</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Verilog in a NutShell</title>
-    <url>/2021/04/05/verilog-netshell/</url>
-    <content><![CDATA[<h1 id="Verilog-in-a-NutShell"><a href="#Verilog-in-a-NutShell" class="headerlink" title="Verilog in a NutShell"></a>Verilog in a NutShell</h1><p><strong>This is a detour to better understand the GenerateRTL phase of LegUp HLS</strong></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="Verilog in a NutShellThis is a detour to better understand the GenerateRTL phase of LegUp HLS 语言基础电路结构的三种描述方法 数据流描述: 采用assign 语句，该语句被称为连续赋值语句。 行为描述:使用always 或initial 语句块，其中出现的语句被称为过程赋值语句。 结构化描述:实例化已有的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Verilog in a NutShell">
+<meta property="og:url" content="http://example.com/2021/04/05/verilog-netshell/index.html">
+<meta property="og:site_name" content="The Furious Two">
+<meta property="og:description" content="Verilog in a NutShellThis is a detour to better understand the GenerateRTL phase of LegUp HLS 语言基础电路结构的三种描述方法 数据流描述: 采用assign 语句，该语句被称为连续赋值语句。 行为描述:使用always 或initial 语句块，其中出现的语句被称为过程赋值语句。 结构化描述:实例化已有的">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/images/image-20210403103930794.png">
+<meta property="og:image" content="http://example.com/images/image-20210403114137701.png">
+<meta property="og:image" content="http://example.com/images/image-20210403230835724.png">
+<meta property="og:image" content="http://example.com/images/image-20210403231427761.png">
+<meta property="og:image" content="http://example.com/images/image-20210403232020963.png">
+<meta property="og:image" content="http://example.com/images/image-20210403233242182.png">
+<meta property="og:image" content="http://example.com/images/image-20210404140858203.png">
+<meta property="og:image" content="http://example.com/images/image-20210404140946263.png">
+<meta property="og:image" content="http://example.com/images/image-20210404142036228.png">
+<meta property="og:image" content="http://example.com/images/image-20210404143752528.png">
+<meta property="og:image" content="http://example.com/images/image-20210404144423819.png">
+<meta property="og:image" content="http://example.com/images/image-20210404151040411.png">
+<meta property="og:image" content="http://example.com/images/image-20210404154959909.png">
+<meta property="og:image" content="http://example.com/images/image-20210404161258410.png">
+<meta property="og:image" content="http://example.com/images/image-20210404162716395.png">
+<meta property="og:image" content="http://example.com/images/image-20210404165317971.png">
+<meta property="article:published_time" content="2021-04-05T01:55:01.000Z">
+<meta property="article:modified_time" content="2021-04-05T02:04:14.479Z">
+<meta property="article:author" content="Rui Li">
+<meta property="article:tag" content="Verilog">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/image-20210403103930794.png">
+
+
+<link rel="canonical" href="http://example.com/2021/04/05/verilog-netshell/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+<title>Verilog in a NutShell | The Furious Two</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">The Furious Two</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Verilog-in-a-NutShell"><span class="nav-number">1.</span> <span class="nav-text">Verilog in a NutShell</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80"><span class="nav-number">1.1.</span> <span class="nav-text">语言基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%B5%E8%B7%AF%E7%BB%93%E6%9E%84%E7%9A%84%E4%B8%89%E7%A7%8D%E6%8F%8F%E8%BF%B0%E6%96%B9%E6%B3%95"><span class="nav-number">1.1.1.</span> <span class="nav-text">电路结构的三种描述方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%8D%E6%B3%95"><span class="nav-number">1.1.2.</span> <span class="nav-text">词法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E4%B8%8E%E7%AB%AF%E5%8F%A3"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">模块与端口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E6%8C%87%E4%BB%A4"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">编译指令</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A9%B1%E5%8A%A8%E4%B8%8E%E8%B5%8B%E5%80%BC"><span class="nav-number">1.1.3.</span> <span class="nav-text">驱动与赋值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E4%B8%8E%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.1.4.</span> <span class="nav-text">并发与顺序</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%8F%E8%BF%B0%E6%96%B9%E5%BC%8F%E4%B8%8E%E8%AE%BE%E8%AE%A1%E5%B1%82%E6%AC%A1"><span class="nav-number">1.2.</span> <span class="nav-text">描述方式与设计层次</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%B5%81%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.2.1.</span> <span class="nav-text">数据流描述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E9%A9%B1%E5%8A%A8%E7%BA%BF%E7%BD%91"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">多驱动线网</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A1%8C%E4%B8%BA%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.2.2.</span> <span class="nav-text">行为描述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%87%E7%A8%8B%E8%B5%8B%E5%80%BC%E8%AF%AD%E5%8F%A5"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">过程赋值语句</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%98%BB%E5%A1%9E%E8%B5%8B%E5%80%BC"><span class="nav-number">1.2.2.1.1.</span> <span class="nav-text">阻塞赋值</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%9D%9E%E9%98%BB%E5%A1%9E%E8%B5%8B%E5%80%BC"><span class="nav-number">1.2.2.1.2.</span> <span class="nav-text">非阻塞赋值</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E5%8F%A5%E7%BB%84"><span class="nav-number">1.2.2.1.3.</span> <span class="nav-text">语句组</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%BC%96%E7%A8%8B%E8%AF%AD%E5%8F%A5"><span class="nav-number">1.2.2.1.4.</span> <span class="nav-text">编程语句</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#if-else-%E8%AF%AD%E5%8F%A5"><span class="nav-number">1.2.2.1.4.1.</span> <span class="nav-text">if-else 语句</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#case%E8%AF%AD%E5%8F%A5"><span class="nav-number">1.2.2.1.4.2.</span> <span class="nav-text">case语句</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E8%AF%AD%E5%8F%A5"><span class="nav-number">1.2.2.1.4.3.</span> <span class="nav-text">循环语句</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84%E5%8C%96%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.2.3.</span> <span class="nav-text">结构化描述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%8C%96%E6%A8%A1%E5%9D%97"><span class="nav-number">1.2.3.1.</span> <span class="nav-text">参数化模块</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%AE%9A%E5%88%B6%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.3.1.1.</span> <span class="nav-text">参数定制方法</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RTL%E7%BA%A7%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.</span> <span class="nav-text">RTL级建模</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%BB%BA%E6%A8%A1%E6%96%B9%E5%BC%8F"><span class="nav-number">1.3.1.</span> <span class="nav-text">常用建模方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B5%8B%E5%80%BC"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">赋值</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%84%E5%AD%98%E5%99%A8%E7%94%B5%E8%B7%AF%E7%9A%84%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.2.</span> <span class="nav-text">寄存器电路的建模</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BB%84%E5%90%88%E9%80%BB%E8%BE%91%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.3.</span> <span class="nav-text">组合逻辑建模</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%8C%E5%90%91%E7%AB%AF%E5%8F%A3%E4%B8%8E%E4%B8%89%E6%80%81%E4%BF%A1%E5%8F%B7%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.4.</span> <span class="nav-text">双向端口与三态信号建模</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Mux%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.5.</span> <span class="nav-text">Mux建模</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%99%A8%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.6.</span> <span class="nav-text">存储器建模</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#Verilog%E4%B8%AD%E7%9A%84%E5%90%91%E9%87%8F"><span class="nav-number">1.3.1.6.0.1.</span> <span class="nav-text">Verilog中的向量</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#Verilog%E4%B8%AD%E7%9A%84%E6%95%B0%E7%BB%84"><span class="nav-number">1.3.1.6.0.2.</span> <span class="nav-text">Verilog中的数组</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#Verilog-%E8%AF%AD%E6%B3%95%E4%B8%AD%E5%9F%BA%E6%9C%AC%E7%9A%84%E5%AD%98%E5%82%A8%E5%8D%95%E5%85%83"><span class="nav-number">1.3.1.6.0.3.</span> <span class="nav-text">Verilog 语法中基本的存储单元</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%B2%E5%B9%B6%E8%BD%AC%E6%8D%A2%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.7.</span> <span class="nav-text">串并转换建模</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E4%B8%8E%E5%BC%82%E6%AD%A5%E5%A4%8D%E4%BD%8D"><span class="nav-number">1.3.1.8.</span> <span class="nav-text">同步与异步复位</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E5%A4%8D%E4%BD%8D%E7%94%B5%E8%B7%AF%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.8.1.</span> <span class="nav-text">同步复位电路建模</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E7%82%B9"><span class="nav-number">1.3.1.8.1.1.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9"><span class="nav-number">1.3.1.8.1.2.</span> <span class="nav-text">缺点</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%BC%82%E6%AD%A5%E5%A4%8D%E4%BD%8D%E7%94%B5%E8%B7%AF%E5%BB%BA%E6%A8%A1"><span class="nav-number">1.3.1.8.2.</span> <span class="nav-text">异步复位电路建模</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BC%98%E7%82%B9-1"><span class="nav-number">1.3.1.8.2.1.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9-1"><span class="nav-number">1.3.1.8.2.2.</span> <span class="nav-text">缺点</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90%E7%9A%84%E5%A4%8D%E4%BD%8D%E6%96%B9%E5%BC%8F"><span class="nav-number">1.3.1.8.3.</span> <span class="nav-text">推荐的复位方式</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%8A%80%E5%B7%A7"><span class="nav-number">1.4.</span> <span class="nav-text">常用设计技巧</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%A4%9A%E6%97%B6%E9%92%9F%E5%A4%84%E7%90%86"><span class="nav-number">1.4.1.</span> <span class="nav-text">同步设计与多时钟处理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%9A%E7%A8%B3%E6%80%81"><span class="nav-number">1.4.1.1.</span> <span class="nav-text">亚稳态</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%82%E6%AD%A5%E6%97%B6%E9%92%9F%E5%9F%9F%E5%90%8C%E6%AD%A5"><span class="nav-number">1.4.1.2.</span> <span class="nav-text">异步时钟域同步</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%90%8C%E9%A2%91%E5%BC%82%E7%9B%B8"><span class="nav-number">1.4.1.2.1.</span> <span class="nav-text">同频异相</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%BC%82%E9%A2%91%E9%97%AE%E9%A2%98"><span class="nav-number">1.4.1.2.2.</span> <span class="nav-text">异频问题</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E5%88%92%E5%88%86%E5%8E%9F%E5%88%99"><span class="nav-number">1.4.2.</span> <span class="nav-text">模块划分原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%84%E5%90%88%E9%80%BB%E8%BE%91%E8%AE%BE%E8%AE%A1%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">1.4.3.</span> <span class="nav-text">组合逻辑设计注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#always-%E7%BB%84%E5%90%88%E9%80%BB%E8%BE%85%E4%BF%A1%E5%8F%B7%E6%95%8F%E6%84%9F%E8%A1%A8"><span class="nav-number">1.4.3.1.</span> <span class="nav-text">always 组合逻辅信号敏感表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BB%84%E5%90%88%E9%80%BB%E8%BE%91%E5%8F%8D%E9%A6%88%E7%8E%AF%E8%B7%AF"><span class="nav-number">1.4.3.2.</span> <span class="nav-text">组合逻辑反馈环路</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%84%89%E5%86%B2%E4%BA%A7%E7%94%9F%E5%99%A8"><span class="nav-number">1.4.3.3.</span> <span class="nav-text">脉冲产生器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E5%A4%8D%E5%88%B6"><span class="nav-number">1.4.3.4.</span> <span class="nav-text">逻辑复制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A6%99%E5%86%9C%E6%89%A9%E5%B1%95%E8%BF%90%E7%AE%97"><span class="nav-number">1.4.3.5.</span> <span class="nav-text">香农扩展运算</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="nav-number">1.5.</span> <span class="nav-text">状态机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E8%A6%81%E7%B4%A0%E5%8F%8A%E5%88%86%E7%B1%BB"><span class="nav-number">1.5.1.</span> <span class="nav-text">基本要素及分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8A%B6%E6%80%81%E6%9C%BA%E7%9A%84%E4%B8%8D%E5%90%8C%E5%86%99%E6%B3%95"><span class="nav-number">1.5.2.</span> <span class="nav-text">状态机的不同写法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E6%AE%B5%E5%BC%8F%E5%86%99%E6%B3%95"><span class="nav-number">1.5.3.</span> <span class="nav-text">两段式写法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E6%AE%B5%E5%BC%8F%E5%86%99%E6%B3%95"><span class="nav-number">1.5.4.</span> <span class="nav-text">三段式写法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">1.5.5.</span> <span class="nav-text">其他注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#FSM%E7%BC%96%E7%A0%81"><span class="nav-number">1.5.5.1.</span> <span class="nav-text">FSM编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FSM-%E8%BE%93%E5%87%BA"><span class="nav-number">1.5.5.2.</span> <span class="nav-text">FSM 输出</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FSM-%E7%9A%84%E9%BB%98%E8%AE%A4%E7%8A%B6%E6%80%81"><span class="nav-number">1.5.5.3.</span> <span class="nav-text">FSM 的默认状态</span></a></li></ol></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rui Li"
+      src="/images/IMG_20201214_235623.jpg">
+  <p class="site-author-name" itemprop="name">Rui Li</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/lirui-shanghaitech" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;lirui-shanghaitech" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/lirui@shanghaitech.edu.cn" title="E-Mail → lirui@shanghaitech.edu.cn"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/05/verilog-netshell/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/IMG_20201214_235623.jpg">
+      <meta itemprop="name" content="Rui Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="The Furious Two">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Verilog in a NutShell
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2021-04-05 09:55:01 / Modified: 10:04:14" itemprop="dateCreated datePublished" datetime="2021-04-05T09:55:01+08:00">2021-04-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Verilog/" itemprop="url" rel="index"><span itemprop="name">Verilog</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Verilog-in-a-NutShell"><a href="#Verilog-in-a-NutShell" class="headerlink" title="Verilog in a NutShell"></a>Verilog in a NutShell</h1><p><strong>This is a detour to better understand the GenerateRTL phase of LegUp HLS</strong></p>
 <h2 id="语言基础"><a href="#语言基础" class="headerlink" title="语言基础"></a>语言基础</h2><h3 id="电路结构的三种描述方法"><a href="#电路结构的三种描述方法" class="headerlink" title="电路结构的三种描述方法"></a>电路结构的三种描述方法</h3><ul>
 <li>数据流描述: 采用assign 语句，该语句被称为连续赋值语句。</li>
 <li>行为描述:使用always 或initial 语句块，其中出现的语句被称为过程赋值语句。</li>
@@ -1313,12 +939,117 @@ a<span class="token punctuation">[</span><span class="token number">0</span><spa
 <h4 id="FSM-的默认状态"><a href="#FSM-的默认状态" class="headerlink" title="FSM 的默认状态"></a>FSM 的默认状态</h4><p>完整的状态机应该包含一个默认( defauIt)状态，当转移条件不满足或者状态发生突变时，要能保证逻辑不会陷入”死循环”这是对状态机健壮性的一个重要要求，也就是常说的要具备”自恢复”功能。对应于编码上就是对case 和if…else 语句要特别注意，尽量使用完备的条件判断语句。Verilog 中，使用case 语句的时候要用defauIt建立默认状态。其实我们可以将其中一个状态不编码，指定其为default 默认状态，则任何与所列状态机不匹配的状态都会转到default 状态，从而增强了FSM 的健壮性，另外也可以添加一个额外的default 状态，电路一旦运行到这个状态，就会自动跳转到IDLE 状态，从新启动状态机，这样做也能增强状态机的健壮性。</p>
 <p><img src="/images/image-20210404165317971.png" alt="image-20210404165317971"></p>
 <p><strong>Testbench的编写，todo</strong></p>
-]]></content>
-      <categories>
-        <category>Verilog</category>
-      </categories>
-      <tags>
-        <tag>Verilog</tag>
-      </tags>
-  </entry>
-</search>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Verilog/" rel="tag"># Verilog</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/28/modulo-scheduling/" rel="prev" title="Modulo Scheduling In HLS (Loop Pipeline Synthesize)">
+                  <i class="fa fa-chevron-left"></i> Modulo Scheduling In HLS (Loop Pipeline Synthesize)
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rui Li</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>
