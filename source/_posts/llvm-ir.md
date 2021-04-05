@@ -1,5 +1,5 @@
 ---
-title: LLVM IR Turtorial
+title: LLVM IR Tutorial
 date: 2021-03-24 15:15:04
 tags: LLVM
 categories: HLS

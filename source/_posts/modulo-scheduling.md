@@ -1,5 +1,5 @@
 ---
-title: Modulo Scheduling In HLS (Loop Pipeline Synthesis)
+title: Modulo Scheduling In HLS (Loop Pipeline Synthesize)
 date: 2021-03-28 22:25:35
 tags: Modulo Scheduling
 categories: HLS

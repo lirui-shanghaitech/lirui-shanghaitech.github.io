@@ -1,5 +1,5 @@
 ---
-title: Datapath synthesis in Verilog
+title: Datapath synthesize in Verilog
 date: 2021-02-21 20:30:17
 tags: Verilog 
 categories: Verilog
