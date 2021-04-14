@@ -23,20 +23,36 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
   </script>
-<meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+<meta name="description" content="AXI4 ProtocolA detour to learn the interface generation phase of HLS (Adapt to Xilinx FPGA) The AXI protocol is burst-based and defines the following independent transaction channels  read address rea">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://example.com/2021/02/21/hello-world/index.html">
+<meta property="og:title" content="AXI Bus">
+<meta property="og:url" content="http://example.com/2021/04/14/axi-bus/index.html">
 <meta property="og:site_name" content="The Furious Two">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+<meta property="og:description" content="AXI4 ProtocolA detour to learn the interface generation phase of HLS (Adapt to Xilinx FPGA) The AXI protocol is burst-based and defines the following independent transaction channels  read address rea">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2021-02-21T10:57:18.555Z">
-<meta property="article:modified_time" content="2021-02-21T12:49:34.884Z">
+<meta property="og:image" content="http://example.com/images/image-20210410102209585.png">
+<meta property="og:image" content="http://example.com/images/image-20210410102236545.png">
+<meta property="og:image" content="http://example.com/images/image-20210410121242174.png">
+<meta property="og:image" content="http://example.com/images/image-20210410103513352.png">
+<meta property="og:image" content="http://example.com/images/image-20210410104054317.png">
+<meta property="og:image" content="http://example.com/images/image-20210410104207295.png">
+<meta property="og:image" content="http://example.com/images/image-20210410104446621.png">
+<meta property="og:image" content="http://example.com/images/image-20210410104801188.png">
+<meta property="og:image" content="http://example.com/images/image-20210410105006758.png">
+<meta property="og:image" content="http://example.com/images/image-20210410123001574.png">
+<meta property="og:image" content="http://example.com/images/image-20210410124207465.png">
+<meta property="og:image" content="http://example.com/images/image-20210410124313603.png">
+<meta property="og:image" content="http://example.com/images/image-20210410123834687.png">
+<meta property="og:image" content="http://example.com/images/image-20210411145937526.png">
+<meta property="article:published_time" content="2021-04-14T08:59:33.000Z">
+<meta property="article:modified_time" content="2021-04-14T09:08:24.271Z">
 <meta property="article:author" content="Rui Li">
+<meta property="article:tag" content="HLS">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/image-20210410102209585.png">
 
 
-<link rel="canonical" href="http://example.com/2021/02/21/hello-world/">
+<link rel="canonical" href="http://example.com/2021/04/14/axi-bus/">
 
 
 <script class="page-configurations">
@@ -48,7 +64,7 @@
     lang   : 'en'
   };
 </script>
-<title>Hello World | The Furious Two</title>
+<title>AXI Bus | The Furious Two</title>
   
 
 
@@ -186,7 +202,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Quick-Start"><span class="nav-number">1.</span> <span class="nav-text">Quick Start</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Create-a-new-post"><span class="nav-number">1.1.</span> <span class="nav-text">Create a new post</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Run-server"><span class="nav-number">1.2.</span> <span class="nav-text">Run server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Generate-static-files"><span class="nav-number">1.3.</span> <span class="nav-text">Generate static files</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deploy-to-remote-sites"><span class="nav-number">1.4.</span> <span class="nav-text">Deploy to remote sites</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#AXI4-Protocol"><span class="nav-number">1.</span> <span class="nav-text">AXI4 Protocol</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Handshake-Process"><span class="nav-number">1.1.</span> <span class="nav-text">Handshake Process</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Signal-Descriptions"><span class="nav-number">1.2.</span> <span class="nav-text">Signal Descriptions</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Global-Signals"><span class="nav-number">1.2.1.</span> <span class="nav-text">Global Signals</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Write-address-channel-signals"><span class="nav-number">1.2.2.</span> <span class="nav-text">Write address channel signals</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Write-data-channel-signals"><span class="nav-number">1.2.3.</span> <span class="nav-text">Write data channel signals</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Write-response-channel-signals"><span class="nav-number">1.2.4.</span> <span class="nav-text">Write response channel signals</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Read-address-channel-signals"><span class="nav-number">1.2.5.</span> <span class="nav-text">Read address channel signals</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Read-data-channel-signals"><span class="nav-number">1.2.6.</span> <span class="nav-text">Read data channel signals</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Burst-W-R"><span class="nav-number">1.2.7.</span> <span class="nav-text">Burst W&#x2F;R</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AXI-Lite"><span class="nav-number">1.3.</span> <span class="nav-text">AXI-Lite</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Xilinx-M-AXI-Adapter-Burst-transaction"><span class="nav-number">1.4.</span> <span class="nav-text">Xilinx M-AXI Adapter (Burst transaction)</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -263,7 +279,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/21/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/14/axi-bus/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/IMG_20201214_235623.jpg">
@@ -276,7 +292,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Hello World
+          AXI Bus
         </h1>
 
         <div class="post-meta-container">
@@ -288,7 +304,16 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2021-02-21 18:57:18 / Modified: 20:49:34" itemprop="dateCreated datePublished" datetime="2021-02-21T18:57:18+08:00">2021-02-21</time>
+      <time title="Created: 2021-04-14 16:59:33 / Modified: 17:08:24" itemprop="dateCreated datePublished" datetime="2021-04-14T16:59:33+08:00">2021-04-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/HLS/" itemprop="url" rel="index"><span itemprop="name">HLS</span></a>
+        </span>
     </span>
 
   
@@ -308,20 +333,62 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+        <h2 id="AXI4-Protocol"><a href="#AXI4-Protocol" class="headerlink" title="AXI4 Protocol"></a>AXI4 Protocol</h2><p><strong>A detour to learn the interface generation phase of HLS</strong> <strong>(Adapt to Xilinx FPGA)</strong></p>
+<p>The AXI protocol is burst-based and defines the following independent transaction channels</p>
+<ul>
+<li>read address</li>
+<li>read data</li>
+<li> write address</li>
+<li>write data</li>
+<li>write response.</li>
+</ul>
+<img src="/images/image-20210410102209585.png" alt="image-20210410102209585" style="zoom:50%;" />
+
 <span id="more"></span>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<img src="/images/image-20210410102236545.png" alt="image-20210410102236545" style="zoom:50%;" />
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>Each of the independent channels consists of a set of information signals and VALID and READY signals that provide a <strong>two-way handshake</strong> mechanism. The information source uses the VALID signal to show when valid address, data or control information is availableon the channel. The destination uses the READY signal to show when it can accept the information. Both the readdata channel and the write data channel also include a LAST signal to indicate the transfer of the final data item in a transaction</p>
+<h3 id="Handshake-Process"><a href="#Handshake-Process" class="headerlink" title="Handshake Process"></a>Handshake Process</h3><p>All five transaction channels use the same VALID/READY handshake process to transfer address, data, and control information.</p>
+<ul>
+<li>The source generates the <strong>VALID</strong> signal to indicate when the address, data or control information is available.</li>
+<li>The destination generates the <strong>READY</strong> signal to indicate that it can accept the information.</li>
+<li>Transfer occurs only when both the <strong>VALID</strong> and <strong>READY</strong> signals are HIGH.</li>
+</ul>
+<img src="/images/image-20210410121242174.png" alt="image-20210410121242174" style="zoom: 67%;" />
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="Signal-Descriptions"><a href="#Signal-Descriptions" class="headerlink" title="Signal Descriptions"></a>Signal Descriptions</h3><h4 id="Global-Signals"><a href="#Global-Signals" class="headerlink" title="Global Signals"></a>Global Signals</h4><p><img src="/images/image-20210410103513352.png" alt="image-20210410103513352"></p>
+<ul>
+<li><strong>CLK</strong>: All signals are sampled on the rising edge of the global clock. Each AXI component uses a single clock signal, ACLK. All input signals are sampled on the rising edge of ACLK. All output signal changes must occur after the rising edge of ACLK.</li>
+<li><strong>RST</strong>: The AXI protocol uses a single active LOW reset signal, ARESETn. The reset signal can be asserted asynchronously.During reset the following interface requirements apply: a master  interface must drive ARVALID, AWVALID, and WVALID LOW; a slave interface must drive RVALID and BVALID LOW.</li>
+</ul>
+<h4 id="Write-address-channel-signals"><a href="#Write-address-channel-signals" class="headerlink" title="Write address channel signals"></a>Write address channel signals</h4><p><img src="/images/image-20210410104054317.png" alt="image-20210410104054317"></p>
+<h4 id="Write-data-channel-signals"><a href="#Write-data-channel-signals" class="headerlink" title="Write data channel signals"></a>Write data channel signals</h4><p><img src="/images/image-20210410104207295.png" alt="image-20210410104207295"></p>
+<h4 id="Write-response-channel-signals"><a href="#Write-response-channel-signals" class="headerlink" title="Write response channel signals"></a>Write response channel signals</h4><p><img src="/images/image-20210410104446621.png" alt="image-20210410104446621"></p>
+<h4 id="Read-address-channel-signals"><a href="#Read-address-channel-signals" class="headerlink" title="Read address channel signals"></a>Read address channel signals</h4><p><img src="/images/image-20210410104801188.png" alt="image-20210410104801188"></p>
+<h4 id="Read-data-channel-signals"><a href="#Read-data-channel-signals" class="headerlink" title="Read data channel signals"></a>Read data channel signals</h4><p><img src="/images/image-20210410105006758.png" alt="image-20210410105006758"></p>
+<h4 id="Burst-W-R"><a href="#Burst-W-R" class="headerlink" title="Burst W/R"></a>Burst W/R</h4><ul>
+<li><p><code>Burst_Length = AxLEN[7:0] + 1</code></p>
+</li>
+<li><p>The maximum number of bytes to transfer in each data transfer, or beat, in a burst, is specified by ARSIZE[2:0], for read transfers, AWSIZE[2:0], for write transfers</p>
+</li>
+</ul>
+<img src="/images/image-20210410123001574.png" alt="image-20210410123001574" style="zoom:50%;" />
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<img src="/images/image-20210410124207465.png" alt="image-20210410124207465" style="zoom:80%;" />
+
+<img src="/images/image-20210410124313603.png" alt="image-20210410124313603" style="zoom:80%;" />
+
+<h3 id="AXI-Lite"><a href="#AXI-Lite" class="headerlink" title="AXI-Lite"></a>AXI-Lite</h3><p>The key functionality of AXI4-Lite operation is:</p>
+<ul>
+<li>all transactions are of burst length 1</li>
+<li>all data accesses use the full width of the data bus AXI4-Lite supports a data bus width of 32-bit or 64-bit.</li>
+<li>all accesses are Non-modifiable, Non-bufferable</li>
+<li>Exclusive accesses are not supported.</li>
+</ul>
+<p><img src="/images/image-20210410123834687.png" alt="image-20210410123834687"></p>
+<h3 id="Xilinx-M-AXI-Adapter-Burst-transaction"><a href="#Xilinx-M-AXI-Adapter-Burst-transaction" class="headerlink" title="Xilinx M-AXI Adapter (Burst transaction)"></a>Xilinx M-AXI Adapter (Burst transaction)</h3><p><img src="/images/image-20210411145937526.png" alt="image-20210411145937526"></p>
+<p>When your design makes a read/write request, the request is sent to the DDR through several specialized helper modules. First, the M-AXI adapter serves as a buffer for the requests created by the HLS kernel. The adapter contains logic to cut large bursts into smaller ones (which it needs to do to prevent hogging the channel or if the request crosses the 4 KB boundary, see Vivado Design Suite: AXI Reference Guide (UG1037)), and can also stall the sending of burst requests (depending on the maximum outstanding requests parameter) so that it can safely buffer the entirety of the data for each kernel. This can slightly increase write latency but can resolve deadlock due to concurrent requests (read or write) on the memory subsystem. </p>
 
     </div>
 
@@ -330,16 +397,19 @@
     
 
     <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/HLS/" rel="tag"># HLS</a>
+          </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
+                <a href="/2021/04/05/verilog-netshell/" rel="prev" title="Verilog in a NutShell">
+                  <i class="fa fa-chevron-left"></i> Verilog in a NutShell
+                </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2021/02/21/verilog-datapath-md/" rel="next" title="Datapath synthesize in Verilog">
-                  Datapath synthesize in Verilog <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>

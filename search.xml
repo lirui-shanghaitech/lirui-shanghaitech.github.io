@@ -1321,4 +1321,71 @@ a<span class="token punctuation">[</span><span class="token number">0</span><spa
         <tag>Verilog</tag>
       </tags>
   </entry>
+  <entry>
+    <title>AXI Bus</title>
+    <url>/2021/04/14/axi-bus/</url>
+    <content><![CDATA[<h2 id="AXI4-Protocol"><a href="#AXI4-Protocol" class="headerlink" title="AXI4 Protocol"></a>AXI4 Protocol</h2><p><strong>A detour to learn the interface generation phase of HLS</strong> <strong>(Adapt to Xilinx FPGA)</strong></p>
+<p>The AXI protocol is burst-based and defines the following independent transaction channels</p>
+<ul>
+<li>read address</li>
+<li>read data</li>
+<li> write address</li>
+<li>write data</li>
+<li>write response.</li>
+</ul>
+<img src="/images/image-20210410102209585.png" alt="image-20210410102209585" style="zoom:50%;" />
+
+<span id="more"></span>
+
+<img src="/images/image-20210410102236545.png" alt="image-20210410102236545" style="zoom:50%;" />
+
+<p>Each of the independent channels consists of a set of information signals and VALID and READY signals that provide a <strong>two-way handshake</strong> mechanism. The information source uses the VALID signal to show when valid address, data or control information is availableon the channel. The destination uses the READY signal to show when it can accept the information. Both the readdata channel and the write data channel also include a LAST signal to indicate the transfer of the final data item in a transaction</p>
+<h3 id="Handshake-Process"><a href="#Handshake-Process" class="headerlink" title="Handshake Process"></a>Handshake Process</h3><p>All five transaction channels use the same VALID/READY handshake process to transfer address, data, and control information.</p>
+<ul>
+<li>The source generates the <strong>VALID</strong> signal to indicate when the address, data or control information is available.</li>
+<li>The destination generates the <strong>READY</strong> signal to indicate that it can accept the information.</li>
+<li>Transfer occurs only when both the <strong>VALID</strong> and <strong>READY</strong> signals are HIGH.</li>
+</ul>
+<img src="/images/image-20210410121242174.png" alt="image-20210410121242174" style="zoom: 67%;" />
+
+<h3 id="Signal-Descriptions"><a href="#Signal-Descriptions" class="headerlink" title="Signal Descriptions"></a>Signal Descriptions</h3><h4 id="Global-Signals"><a href="#Global-Signals" class="headerlink" title="Global Signals"></a>Global Signals</h4><p><img src="/images/image-20210410103513352.png" alt="image-20210410103513352"></p>
+<ul>
+<li><strong>CLK</strong>: All signals are sampled on the rising edge of the global clock. Each AXI component uses a single clock signal, ACLK. All input signals are sampled on the rising edge of ACLK. All output signal changes must occur after the rising edge of ACLK.</li>
+<li><strong>RST</strong>: The AXI protocol uses a single active LOW reset signal, ARESETn. The reset signal can be asserted asynchronously.During reset the following interface requirements apply: a master  interface must drive ARVALID, AWVALID, and WVALID LOW; a slave interface must drive RVALID and BVALID LOW.</li>
+</ul>
+<h4 id="Write-address-channel-signals"><a href="#Write-address-channel-signals" class="headerlink" title="Write address channel signals"></a>Write address channel signals</h4><p><img src="/images/image-20210410104054317.png" alt="image-20210410104054317"></p>
+<h4 id="Write-data-channel-signals"><a href="#Write-data-channel-signals" class="headerlink" title="Write data channel signals"></a>Write data channel signals</h4><p><img src="/images/image-20210410104207295.png" alt="image-20210410104207295"></p>
+<h4 id="Write-response-channel-signals"><a href="#Write-response-channel-signals" class="headerlink" title="Write response channel signals"></a>Write response channel signals</h4><p><img src="/images/image-20210410104446621.png" alt="image-20210410104446621"></p>
+<h4 id="Read-address-channel-signals"><a href="#Read-address-channel-signals" class="headerlink" title="Read address channel signals"></a>Read address channel signals</h4><p><img src="/images/image-20210410104801188.png" alt="image-20210410104801188"></p>
+<h4 id="Read-data-channel-signals"><a href="#Read-data-channel-signals" class="headerlink" title="Read data channel signals"></a>Read data channel signals</h4><p><img src="/images/image-20210410105006758.png" alt="image-20210410105006758"></p>
+<h4 id="Burst-W-R"><a href="#Burst-W-R" class="headerlink" title="Burst W/R"></a>Burst W/R</h4><ul>
+<li><p><code>Burst_Length = AxLEN[7:0] + 1</code></p>
+</li>
+<li><p>The maximum number of bytes to transfer in each data transfer, or beat, in a burst, is specified by ARSIZE[2:0], for read transfers, AWSIZE[2:0], for write transfers</p>
+</li>
+</ul>
+<img src="/images/image-20210410123001574.png" alt="image-20210410123001574" style="zoom:50%;" />
+
+<img src="/images/image-20210410124207465.png" alt="image-20210410124207465" style="zoom:80%;" />
+
+<img src="/images/image-20210410124313603.png" alt="image-20210410124313603" style="zoom:80%;" />
+
+<h3 id="AXI-Lite"><a href="#AXI-Lite" class="headerlink" title="AXI-Lite"></a>AXI-Lite</h3><p>The key functionality of AXI4-Lite operation is:</p>
+<ul>
+<li>all transactions are of burst length 1</li>
+<li>all data accesses use the full width of the data bus AXI4-Lite supports a data bus width of 32-bit or 64-bit.</li>
+<li>all accesses are Non-modifiable, Non-bufferable</li>
+<li>Exclusive accesses are not supported.</li>
+</ul>
+<p><img src="/images/image-20210410123834687.png" alt="image-20210410123834687"></p>
+<h3 id="Xilinx-M-AXI-Adapter-Burst-transaction"><a href="#Xilinx-M-AXI-Adapter-Burst-transaction" class="headerlink" title="Xilinx M-AXI Adapter (Burst transaction)"></a>Xilinx M-AXI Adapter (Burst transaction)</h3><p><img src="/images/image-20210411145937526.png" alt="image-20210411145937526"></p>
+<p>When your design makes a read/write request, the request is sent to the DDR through several specialized helper modules. First, the M-AXI adapter serves as a buffer for the requests created by the HLS kernel. The adapter contains logic to cut large bursts into smaller ones (which it needs to do to prevent hogging the channel or if the request crosses the 4 KB boundary, see Vivado Design Suite: AXI Reference Guide (UG1037)), and can also stall the sending of burst requests (depending on the maximum outstanding requests parameter) so that it can safely buffer the entirety of the data for each kernel. This can slightly increase write latency but can resolve deadlock due to concurrent requests (read or write) on the memory subsystem. </p>
+]]></content>
+      <categories>
+        <category>HLS</category>
+      </categories>
+      <tags>
+        <tag>HLS</tag>
+      </tags>
+  </entry>
 </search>
