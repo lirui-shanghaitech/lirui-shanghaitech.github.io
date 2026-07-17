@@ -9,7 +9,7 @@ window.SITE_CONTENT = {
   displayOptions: {
     // Organization logos can be controlled independently for each section.
     showEducationBadges: true,
-    showAwardBadges: false,
+    showAwardBadges: true,
   },
 
   name: "Rui Li",
