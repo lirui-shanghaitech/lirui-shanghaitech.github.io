@@ -52,6 +52,16 @@ window.SITE_CONTENT = {
 
   skills: ["C/C++", "Python", "Rust", "Verilog", "MLIR"],
 
+  visitorCounter: {
+    enabled: true,
+    label: "Unique visits",
+    serviceBaseUrl: "https://page-views-api.ratneshc.com/api/v1",
+    site: "lirui-shanghaitech.github.io",
+    path: "/",
+    trackOnHosts: ["lirui-shanghaitech.github.io"],
+    deduplicationNote: "Counted once per visitor every 30 minutes.",
+  },
+
   biography: [
     "I am currently a Postdoctoral Fellow in the Department of Electronic and Computer Engineering at The Hong Kong University of Science and Technology (HKUST), starting in April 2026. I received my Ph.D. in Electronic Science and Technology from ShanghaiTech University in January 2026, where I was supervised by Prof. Yajun Ha, and my B.Eng. in Electronic Information Engineering from ShanghaiTech University in July 2020.",
     "My research focuses on electronic design automation, including high-level and logic synthesis, formal verification of arithmetic circuits, reliable FPGA computing, and AI-assisted EDA.",
