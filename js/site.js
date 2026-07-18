@@ -146,7 +146,6 @@
         return `
           <li>
             <span class="venue-badge">${escapeHtml(publication.label)}</span>
-            ${publication.ccf ? `<span class="ccf-badge ${publication.ccf === "CCF-A" ? "ccf-a" : "ccf-b"}">${escapeHtml(publication.ccf)}</span>` : ""}
             <span class="publication-authors">${emphasizeName(publication.authors)}</span>,
             “${title}”,
             <span class="publication-venue">${escapeHtml(publication.citation)}.</span>
@@ -161,7 +160,7 @@
       (patent) => `
         <li>
           <span class="venue-badge patent-type">${escapeHtml(patent.type)}</span>
-          <span class="ccf-badge patent-status ${patent.status === "Granted" ? "granted" : "published"}">${escapeHtml(patent.status)}</span>
+          <span class="status-badge patent-status ${patent.status === "Granted" ? "granted" : "published"}">${escapeHtml(patent.status)}</span>
           <span class="publication-authors">${emphasizeName(patent.inventors)}</span>,
           “<span class="publication-title">${escapeHtml(patent.title)}</span>”,
           <span class="publication-venue">${escapeHtml(patent.number)}, ${escapeHtml(patent.date)}.</span>

@@ -258,7 +258,7 @@ ol {
 }
 
 .venue-badge,
-.ccf-badge {
+.status-badge {
   display: inline-block;
   padding: 1px 8px;
   border: 0;
@@ -276,21 +276,6 @@ ol {
 .venue-badge {
   min-width: 78px;
   margin-right: 5px;
-}
-
-.ccf-badge {
-  min-width: 47px;
-  margin-right: 5px;
-}
-
-.ccf-badge.ccf-a {
-  color: #9a3131;
-  background: #fbe5e5;
-}
-
-.ccf-badge.ccf-b {
-  color: #2f6b47;
-  background: #e4f2e8;
 }
 
 .patent-status {

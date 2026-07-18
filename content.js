@@ -88,7 +88,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TCAD'26",
-      ccf: "CCF-A",
       title:
         "ESACO: Fast E-Graph Extraction via Orchestrated Simulated Annealing-Based Local Search and Ant Colony Optimization-Based Global Search",
       authors: "Rui Li, Lin Li, Heng Yu, and Yajun Ha",
@@ -98,7 +97,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TODAES'26",
-      ccf: "CCF-B",
       title:
         "FPGA Routing Congestion Prediction via Graph Learning-Aided Conditional GAN",
       authors:
@@ -119,7 +117,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TCAD'25",
-      ccf: "CCF-A",
       title:
         "LibSCAT: Library-Based Formal Verification of Heavily Optimized Multipliers via GNN-Guided Reference Selection",
       authors:
@@ -130,7 +127,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TCAD'25",
-      ccf: "CCF-A",
       title:
         "Fast FPGA Accelerator of Graph Cut Algorithm Based on Cached Folding Grid Architecture",
       authors:
@@ -141,7 +137,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TCAD'25",
-      ccf: "CCF-A",
       title:
         "RefSCAT-2.0: Formal Verification of Large-Scale Optimized Multipliers via Quantum-Inspired Ant Colony Optimization-Based Reference Generation",
       authors:
@@ -152,7 +147,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TCAD'25",
-      ccf: "CCF-A",
       title:
         "RefSCAT: Formal Verification of Logic-Optimized Multipliers via Automated Reference Multiplier Generation and SCA-SAT Synergy",
       authors:
@@ -163,7 +157,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TCAD'23",
-      ccf: "CCF-A",
       title:
         "Criticality-Aware Negotiation-Driven Scrubbing Scheduling for Reliability Maximization in SRAM-Based FPGAs",
       authors: "Rui Li, Heng Yu, Lin Li, and Yajun Ha",
@@ -173,7 +166,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "TCAD'23",
-      ccf: "CCF-A",
       title:
         "A Recursion and Lock-Free GPU-Based Logic Rewriting Framework Exploiting Both Intranode and Internode Parallelism",
       authors: "Lin Li, Rui Li, and Yajun Ha",
@@ -193,7 +185,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "DAC'21",
-      ccf: "CCF-A",
       title:
         "TAIT: One-Shot Full-Integer Lightweight DNN Quantization via Tunable Activation Imbalance Transfer",
       authors:
@@ -203,7 +194,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "DAC'20",
-      ccf: "CCF-A",
       title:
         "DVFS-Based Scrubbing Scheduling for Reliability Maximization on Parallel Tasks in SRAM-Based FPGAs",
       authors: "Rui Li, Heng Yu, Weixiong Jiang, and Yajun Ha",
@@ -213,7 +203,6 @@ window.SITE_CONTENT = {
     },
     {
       label: "ISCAS'20",
-      ccf: "CCF-B",
       title: "An Accurate FPGA Online Delay Monitor Supporting All Timing Paths",
       authors: "Weixiong Jiang, Rui Li, Heng Yu, and Yajun Ha",
       citation:
